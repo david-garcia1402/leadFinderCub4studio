@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';
 test('HTTP demo, disabled live mode and static-file boundary',async()=>{
- const proc=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'4189',HOST:'127.0.0.1',ENABLE_LIVE_SEARCH:'false'},stdio:['ignore','pipe','pipe']});
+ const proc=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'4189',HOST:'127.0.0.1',ENABLE_LIVE_SEARCH:'false',ENABLE_SAMPLE_DATA:'true'},stdio:['ignore','pipe','pipe']});
  try{await new Promise((resolve,reject)=>{proc.stdout.once('data',resolve);proc.once('error',reject);proc.once('exit',code=>reject(new Error('Server exited '+code)));});
  const base='http://127.0.0.1:4189';
  assert.equal((await (await fetch(base+'/api/config')).json()).live,false);

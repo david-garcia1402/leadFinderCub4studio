@@ -1,0 +1,1 @@
+6 testes automatizados aprovados. Build Node concluído. Rotas comerciais e painel verificadas por HTTP. Layout implementado para desktop/tablet/celular com media queries; não foi possível inspecionar screenshots porque o download do Chromium falhou no ambiente. Não houve validação visual em navegador, busca com chave real, cobrança ou publicação.

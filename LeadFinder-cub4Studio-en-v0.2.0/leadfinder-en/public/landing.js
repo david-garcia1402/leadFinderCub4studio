@@ -1,0 +1,1 @@
+document.querySelectorAll('[data-plan]').forEach(link=>link.addEventListener('click',()=>{document.getElementById('interest-copy').textContent=`Interested in ${link.dataset.plan}? Talk to cub4Studio about availability, pricing and launch. No payment is collected here.`;}));
