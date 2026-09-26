@@ -1,4 +1,6 @@
 import http from 'node:http';
+import {seoLinks,robots,sitemap,publicOrigin} from './lib/seo.mjs';
+import {createHash} from 'node:crypto';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
@@ -24,6 +26,14 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='POST') {
   if(req.headers.origin && req.headers.origin!==(process.env.APP_ORIGIN||`http://${req.headers.host}`))return send(res,403,{error:'Cross-origin requests are not allowed.'});
   if(req.headers['x-cub4-client']!=='lead-finder')return send(res,403,{error:'Invalid client.'});
+ }
+ if (url.pathname === '/robots.txt' && req.method === 'GET') {
+  res.writeHead(200, {...headers, 'Content-Type':'text/plain; charset=utf-8'}); return res.end(robots());
+ }
+ if (url.pathname === '/sitemap.xml' && req.method === 'GET') {
+  const xml = sitemap();
+  res.writeHead(xml ? 200 : 503, {...headers, 'Content-Type':'application/xml; charset=utf-8'});
+  return res.end(xml || '<?xml version="1.0" encoding="UTF-8"?><error>PUBLIC_SITE_URL is not configured</error>');
  }
  if(url.pathname==='/api/config')return send(res,200,{live,preview});
  if(url.pathname==='/api/search'&&req.method==='POST'){
@@ -51,8 +61,17 @@ const server=http.createServer(async(req,res)=>{
  }
  const routes={'/app':'public/workspace.html','/landing.css':'public/landing.css','/landing.js':'public/landing.js','/logo.svg':'public/logo.svg','/':'public/index.html','/app.js':'public/app.js','/style.css':'public/style.css','/leads.mjs':'lib/leads.mjs'};
  if(req.method!=='GET'||!routes[url.pathname])return send(res,404,{error:'Not found'});
- const data=await readFile(root+routes[url.pathname]); const ext=url.pathname.split('.').pop();
- res.writeHead(200,{...headers,'Content-Type':ext==='svg'?'image/svg+xml':ext==='png'?'image/png':ext==='css'?'text/css':ext==='js'||ext==='mjs'?'text/javascript':'text/html; charset=utf-8'});res.end(data);
+ let data=await readFile(root+routes[url.pathname]);
+ if (url.pathname === '/') data = Buffer.from(data.toString().replace('<!-- SEO_LINKS -->', seoLinks())); const ext=url.pathname.split('.').pop();
+ const pageHeaders = {...headers};
+ // Allow only the exact static JSON-LD payload; keep inline executable scripts blocked.
+ const structured = url.pathname === '/' && data.toString().match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+ if (structured) {
+  const hash = createHash('sha256').update(structured[1]).digest('base64');
+  pageHeaders['Content-Security-Policy'] = headers['Content-Security-Policy'].replace("script-src 'self'", `script-src 'self' 'sha256-${hash}'`);
+ }
+ if (url.pathname === '/app' || (url.pathname === '/' && !publicOrigin(process.env.PUBLIC_SITE_URL))) pageHeaders['X-Robots-Tag'] = 'noindex, nofollow';
+ res.writeHead(200,{...pageHeaders,'Content-Type':ext==='svg'?'image/svg+xml':ext==='png'?'image/png':ext==='css'?'text/css':ext==='js'||ext==='mjs'?'text/javascript':'text/html; charset=utf-8'});res.end(data);
  }catch(e){send(res,400,{error:e.name==='TimeoutError'?'Provider timeout. Check the provider dashboard before retrying.':e.message||'Unable to complete request.'});}
 });
 server.listen(port,host,()=>console.log(`cub4Studio Lead Finder running at http://${host}:${port} | ${live?'live configured':'live unavailable'}`));

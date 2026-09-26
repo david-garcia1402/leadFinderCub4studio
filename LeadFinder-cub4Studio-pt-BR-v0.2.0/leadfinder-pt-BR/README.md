@@ -30,7 +30,7 @@ Não é um site puramente estático: o painel depende do servidor Node. Não abr
 - Nova assinatura vetorial Lead Finder; mantém roxo/coral. É uma proposta visual do produto, não uma reprodução certificada da logo corporativa.
 - Prévia do produto em HTML/CSS, nítida em qualquer tela e sem imagens de banco genéricas. Empresas da prévia são fictícias e identificadas.
 - Três planos em colunas no desktop e empilhados no celular. Profissional em destaque.
-- Preços propostos: R$ 29,90 / 59,90 / 99,90; franquias propostas: 100 / 300 / 600 empresas. Não estão conectados ao consumo. Devem ser validados antes de venda.
+- Preços propostos: R$ 51,85 / 103,75 / 155,65; franquias propostas: 100 / 300 / 600 empresas. Não estão conectados ao consumo. Devem ser validados antes de venda.
 - CTA de interesse seleciona o plano e encaminha ao contato institucional; não existe checkout nem cadastro de lista de espera.
 - Exemplos desativados por padrão. Nunca substitui silenciosamente a busca real por dados fictícios.
 - Preservados filtros, favoritos no navegador, CSV e rascunho de abordagem.
@@ -66,3 +66,13 @@ Depois de qualquer edição, execute npm test e npm run build para atualizar dis
 
 ## Validação
 Build Node e testes automatizados executados nesta entrega. Verificação HTTP de páginas, assets, bloqueio de exemplos, origem e proteção de arquivos internos. Validação visual em navegador depende da disponibilidade do Chromium no ambiente; veja VALIDATION.md. Nenhum pagamento, chamada paga ao provedor ou deploy público foi realizado.
+
+## SEO deployment configuration / Configuração de SEO
+
+Set `PUBLIC_SITE_URL` to this deployment's real HTTPS origin, without a path. Set `EN_SITE_URL` and `PT_BR_SITE_URL` to the two distinct production origins in **both** deployments to emit reciprocal hreflang links. These fields are not inferred from request headers or the corporate website. Blank/invalid `PUBLIC_SITE_URL` disables indexing (robots + X-Robots-Tag), omits canonical and makes `/sitemap.xml` return 503. This keeps staging/local deployments out of search.
+
+Defina `PUBLIC_SITE_URL` com a origem HTTPS real desta versão, sem caminho. Configure `EN_SITE_URL` e `PT_BR_SITE_URL` nas duas versões. Valores vazios mantêm a indexação desativada. Reinicie o servidor após configurar. As versões são aplicações separadas e devem ser publicadas em origens distintas; hospedagem em subdiretórios não é suportada.
+
+The server emits canonical/og:url, a landing-only sitemap and robots rules. The workspace has noindex. Localized title, description, Open Graph, Twitter summary and SoftwareApplication JSON-LD describe existing features. No paid Offer schema is published before billing exists. No ranking or rich-result guarantee.
+
+Plan CTAs populate a local prospecting brief with plan, monthly price, service and target market. Visitors copy it and paste it into their conversation on the existing corporate contact page. No lead is automatically sent, registered or stored; no checkout is implemented. No analytics conversion is recorded.

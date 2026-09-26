@@ -30,7 +30,7 @@ This is a Node application, not a static-only website. Do not open index.html di
 - New vector Lead Finder product mark using the existing purple/coral palette. This is a proposed product identity, not a certified reproduction of the corporate logo.
 - Responsive HTML/CSS product illustration with clearly labeled fictional businesses. No generic stock imagery.
 - Three desktop pricing columns, stacked on mobile, with the Professional plan highlighted.
-- Proposed monthly BRL prices: R$29.90 / R$59.90 / R$99.90. Proposed allowances: 100 / 300 / 600 businesses. These are not enforced subscription quotas and require commercial validation.
+- Proposed monthly USD prices: $9.99 / $19.99 / $29.99. Proposed allowances: 100 / 300 / 600 businesses. These are not enforced subscription quotas and require commercial validation.
 - Interest CTAs select a plan and lead to the corporate contact page. No checkout or waitlist registration is implemented.
 - Sample data disabled by default. Real searches never silently fall back to fictional data.
 - Preserved filters, browser-saved shortlist, CSV export and editable outreach drafts.
@@ -53,7 +53,7 @@ Before launching subscriptions: authentication/account recovery; database with t
 ## Campaign analysis
 The clearest pain point is time spent researching businesses and organizing outreach. Suggested initial audience: website freelancers and small agencies. Offer: find businesses by location and prioritize those without a listed website. Do not claim ready-to-buy customers or a confirmed absence of a website.
 Before subscription campaigns, measure data cost and margins, validate allowances and test real search, payment and cancellation end to end. This page currently supports product presentation and prelaunch conversations. Contact links point to cub4studio.com/#contato; verify that destination before publishing.
-Prices/allowances are commercial hypotheses, not recommendations based on current provider tariffs. Volume discounts can erode margin when data costs are high. All prices remain in BRL; no currency conversion was assumed.
+Prices/allowances are commercial hypotheses, not recommendations based on current provider tariffs. Volume discounts can erode margin when data costs are high. US prices are in USD. Brazil uses the fixed reference conversion documented in the repository README.
 
 ## Editing
 `public/index.html`: product page, pricing and contact links.
@@ -66,3 +66,13 @@ After editing, run npm test and npm run build to refresh dist.
 
 ## Validation
 Node build and automated tests run for this delivery. HTTP checks cover pages/assets, disabled samples, origins and internal-file boundaries. Browser visual validation depends on Chromium availability; see VALIDATION.md. No payments, paid provider calls or public deployment were performed.
+
+## SEO deployment configuration / Configuração de SEO
+
+Set `PUBLIC_SITE_URL` to this deployment's real HTTPS origin, without a path. Set `EN_SITE_URL` and `PT_BR_SITE_URL` to the two distinct production origins in **both** deployments to emit reciprocal hreflang links. These fields are not inferred from request headers or the corporate website. Blank/invalid `PUBLIC_SITE_URL` disables indexing (robots + X-Robots-Tag), omits canonical and makes `/sitemap.xml` return 503. This keeps staging/local deployments out of search.
+
+Defina `PUBLIC_SITE_URL` com a origem HTTPS real desta versão, sem caminho. Configure `EN_SITE_URL` e `PT_BR_SITE_URL` nas duas versões. Valores vazios mantêm a indexação desativada. Reinicie o servidor após configurar. As versões são aplicações separadas e devem ser publicadas em origens distintas; hospedagem em subdiretórios não é suportada.
+
+The server emits canonical/og:url, a landing-only sitemap and robots rules. The workspace has noindex. Localized title, description, Open Graph, Twitter summary and SoftwareApplication JSON-LD describe existing features. No paid Offer schema is published before billing exists. No ranking or rich-result guarantee.
+
+Plan CTAs populate a local prospecting brief with plan, monthly price, service and target market. Visitors copy it and paste it into their conversation on the existing corporate contact page. No lead is automatically sent, registered or stored; no checkout is implemented. No analytics conversion is recorded.
