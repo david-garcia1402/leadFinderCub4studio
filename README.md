@@ -4,11 +4,11 @@ Separate English (US) and Portuguese (Brazil) Node deployments.
 
 | Plan | USA / month | Brasil / mês | Proposed businesses / month |
 | --- | --- | --- | --- |
-| Essential / Essencial | US$ 9.99 | R$ 51,85 | 100 |
-| Professional / Profissional | US$ 19.99 | R$ 103,75 | 300 |
-| Scale / Escala | US$ 29.99 | R$ 155,65 | 600 |
+| Essential / Essencial | US$ 9.99 | R$ 39,99 | 100 |
+| Professional / Profissional | US$ 19.99 | R$ 59,99 | 300 |
+| Scale / Escala | US$ 29.99 | R$ 89,99 | 600 |
 
-Brazil uses USD × 5.19, rounded to two decimals: 9.99 × 5.19 = 51.8481; 19.99 × 5.19 = 103.7481; 29.99 × 5.19 = 155.6481. This is a **fixed reference conversion**, not a live FX quote, payment-provider rate or tax calculation. Reference observed September 26, 2026: [Ordem dos Economistas do Brasil — USD/BRL](https://www.oeb.org.br/indicadores/dolar), R$ 5.19 (source listed there: AwesomeAPI). The landing labels proposed BRL prices and conversion date.
+Brazil uses **independent proposed BRL launch prices** (R$ 39,99 / 59,99 / 89,99), not a live USD conversion, payment-provider rate or tax calculation. The US version keeps the USD list. Subscriptions remain unavailable.
 
 Subscriptions, billing and per-customer quotas are not implemented. Allowances remain launch proposals and require cost validation. CTAs qualify launch interest; they do not accept payments or promise immediate activation.
 
@@ -20,7 +20,7 @@ Copy `.env.example` to `.env` and configure the real HTTPS `PUBLIC_SITE_URL` bef
 
 ## Changes
 
-- Correct USD prices for the US version; converted BRL prices for Brazil.
+- Correct USD prices for the US version; independent proposed BRL prices for Brazil.
 - Three responsive pricing columns with differentiated prospecting CTAs.
 - Copyable qualification brief: selected plan/price, service, target industry and city. Nothing is submitted or persisted automatically.
 - Localized metadata and H1, SoftwareApplication JSON-LD, canonical/og:url, optional reciprocal hreflang, robots and sitemap.
