@@ -3,7 +3,7 @@ const service = document.getElementById('interest-service');
 const market = document.getElementById('interest-market');
 const brief = document.getElementById('interest-brief');
 const status = document.getElementById('copy-status');
-const english = document.documentElement.lang === 'en-US';
+const english = document.documentElement.lang.startsWith('en');
 const hint = status.textContent;
 function updateBrief() {
   const price = plan.selectedOptions[0].dataset.price;
@@ -30,3 +30,32 @@ document.getElementById('copy-brief').addEventListener('click', async () => {
   }
 });
 updateBrief();
+
+const topbar = document.querySelector('.top');
+const updateTopbar = () => topbar.classList.toggle('scrolled', window.scrollY > 16);
+window.addEventListener('scroll', updateTopbar, {passive: true});
+updateTopbar();
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const revealItems = document.querySelectorAll('.section, .audience, .final-cta');
+if (reduceMotion || !('IntersectionObserver' in window)) {
+  revealItems.forEach(item => item.classList.add('in-view'));
+} else {
+  revealItems.forEach(item => item.classList.add('reveal'));
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {threshold: 0.12});
+  revealItems.forEach(item => observer.observe(item));
+}
+
+document.querySelectorAll('.faq details').forEach(item => item.addEventListener('toggle', () => {
+  if (!item.open) return;
+  document.querySelectorAll('.faq details[open]').forEach(openItem => {
+    if (openItem !== item) openItem.open = false;
+  });
+}));
