@@ -18,7 +18,7 @@ test('SEO uses configured HTTPS origins and reciprocal locale links only', () =>
 test('localized pricing and plan handoff agree, without claiming active subscriptions', async () => {
   const html = await readFile('public/index.html', 'utf8');
   const english = html.includes('lang="en-US"');
-  const prices = english ? ['$9.99 USD / month', '$19.99 USD / month', '$29.99 USD / month'] : ['R$ 51,85 / mês', 'R$ 103,75 / mês', 'R$ 155,65 / mês'];
+  const prices = english ? ['$9.99 USD / month', '$19.99 USD / month', '$29.99 USD / month'] : ['R$ 39,99 / mês', 'R$ 59,99 / mês', 'R$ 89,99 / mês'];
   const cards = [...html.matchAll(/<div class="price">(.*?)<\/div>/g)].map(m=>m[1].replace(/<[^>]+>/g,''));
   assert.deepEqual(cards, prices);
   for (const price of prices) assert.equal(html.split(`data-price="${price}"`).length - 1, 2);
