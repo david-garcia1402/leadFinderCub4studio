@@ -59,7 +59,7 @@ const server=http.createServer(async(req,res)=>{
   const result=await checkSearch(job.providerId,process.env.OUTSCRAPER_API_KEY);
   if(!result.pending){cache.set(job.key,result);jobs.delete(url.pathname.split('/').pop());}return send(res,result.pending?202:200,result);
  }
- const routes={'/app':'public/workspace.html','/landing.css':'public/landing.css','/landing.js':'public/landing.js','/logo.svg':'public/logo.svg','/':'public/index.html','/app.js':'public/app.js','/style.css':'public/style.css','/leads.mjs':'lib/leads.mjs'};
+ const routes={'/app':'public/workspace.html','/landing.css':'public/landing.css','/landing.js':'public/landing.js','/logo.svg':'public/logo.svg','/':'public/index.html','/app.js':'public/app.js','/style.css':'public/style.css','/leads.mjs':'lib/leads.mjs','/fonts/plus-jakarta-sans-latin-wght-normal.woff2':'public/fonts/plus-jakarta-sans-latin-wght-normal.woff2','/fonts/plus-jakarta-sans-latin-wght-italic.woff2':'public/fonts/plus-jakarta-sans-latin-wght-italic.woff2'};
  if(req.method!=='GET'||!routes[url.pathname])return send(res,404,{error:'Not found'});
  let data=await readFile(root+routes[url.pathname]);
  if (url.pathname === '/') data = Buffer.from(data.toString().replace('<!-- SEO_LINKS -->', seoLinks())); const ext=url.pathname.split('.').pop();
@@ -71,7 +71,7 @@ const server=http.createServer(async(req,res)=>{
   pageHeaders['Content-Security-Policy'] = headers['Content-Security-Policy'].replace("script-src 'self'", `script-src 'self' 'sha256-${hash}'`);
  }
  if (url.pathname === '/app' || (url.pathname === '/' && !publicOrigin(process.env.PUBLIC_SITE_URL))) pageHeaders['X-Robots-Tag'] = 'noindex, nofollow';
- res.writeHead(200,{...pageHeaders,'Content-Type':ext==='svg'?'image/svg+xml':ext==='png'?'image/png':ext==='css'?'text/css':ext==='js'||ext==='mjs'?'text/javascript':'text/html; charset=utf-8'});res.end(data);
+ res.writeHead(200,{...pageHeaders,'Content-Type':ext==='svg'?'image/svg+xml':ext==='png'?'image/png':ext==='css'?'text/css':ext==='woff2'?'font/woff2':ext==='js'||ext==='mjs'?'text/javascript':'text/html; charset=utf-8'});res.end(data);
  }catch(e){send(res,400,{error:e.name==='TimeoutError'?'O provedor demorou a responder. Confira seu painel antes de repetir.':e.message||'Não foi possível concluir a solicitação.'});}
 });
 server.listen(port,host,()=>console.log(`cub4Studio Lead Finder running at http://${host}:${port} | ${live?'live configured':'live unavailable'}`));
