@@ -44,6 +44,9 @@ if (!reducedMotion && 'IntersectionObserver' in window) {
     for (const entry of entries) if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
   }, {threshold: 0.12, rootMargin: '0px 0px -8% 0px'});
   revealTargets.forEach(el => io.observe(el));
+  // Safety net: never leave content hidden if the observer misses an element (e.g. anchor jumps, print).
+  setTimeout(() => revealTargets.forEach(el => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in'); }), 2500);
+  addEventListener('beforeprint', () => revealTargets.forEach(el => el.classList.add('in')));
 }
 
 /* ---------- FAQ: one open at a time ---------- */
