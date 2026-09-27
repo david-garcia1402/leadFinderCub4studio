@@ -339,7 +339,7 @@ $('clear-saved').onclick = () => {
     clearArmed = true;
     $('clear-saved').textContent = T.clearConfirm;
     $('clear-saved').classList.add('armed');
-    clearTimer = setTimeout(resetClearConfirm, 3500);
+    clearTimer = setTimeout(resetClearConfirm, 6000);
     return;
   }
   resetClearConfirm();

@@ -2,7 +2,7 @@ const english = document.documentElement.lang === 'en-US';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- header: sticky shadow + mobile menu ---------- */
-const top = document.querySelector('.top');
+const header = document.querySelector('.top');
 const nav = document.getElementById('site-nav');
 const toggle = document.getElementById('menu-toggle');
 
@@ -15,11 +15,11 @@ toggle.addEventListener('click', () => setMenu(!document.body.classList.contains
 nav.addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('menu-open')) { setMenu(false); toggle.focus(); } });
 document.addEventListener('click', e => {
-  if (document.body.classList.contains('menu-open') && !top.contains(e.target)) setMenu(false);
+  if (document.body.classList.contains('menu-open') && !header.contains(e.target)) setMenu(false);
 });
 matchMedia('(min-width: 761px)').addEventListener('change', e => { if (e.matches) setMenu(false); });
 
-const onScroll = () => top.classList.toggle('scrolled', scrollY > 12);
+const onScroll = () => header.classList.toggle('scrolled', scrollY > 12);
 addEventListener('scroll', onScroll, {passive: true});
 onScroll();
 
