@@ -30,7 +30,7 @@ Não é um site puramente estático: o painel depende do servidor Node. Não abr
 - Nova assinatura vetorial Lead Finder; mantém roxo/coral. É uma proposta visual do produto, não uma reprodução certificada da logo corporativa.
 - Prévia do produto em HTML/CSS, nítida em qualquer tela e sem imagens de banco genéricas. Empresas da prévia são fictícias e identificadas.
 - Três planos em colunas no desktop e empilhados no celular. Profissional em destaque.
-- Preços propostos: R$ 51,85 / 103,75 / 155,65; franquias propostas: 100 / 300 / 600 empresas. Não estão conectados ao consumo. Devem ser validados antes de venda.
+- Preços propostos: R$ 39,99 / 59,99 / 89,99; franquias propostas: 100 / 300 / 600 empresas. Não estão conectados ao consumo. Devem ser validados antes de venda.
 - CTA de interesse seleciona o plano e encaminha ao contato institucional; não existe checkout nem cadastro de lista de espera.
 - Exemplos desativados por padrão. Nunca substitui silenciosamente a busca real por dados fictícios.
 - Preservados filtros, favoritos no navegador, CSV e rascunho de abordagem.
