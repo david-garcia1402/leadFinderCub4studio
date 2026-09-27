@@ -13,9 +13,9 @@ import {parseWebhookPayload,verifyWebhookSignature,webhookManifest} from '../lib
 test('catalog keeps the proposed BRL plans and quotas', () => {
   assert.equal(getPlan('Profissional').quota, 300);
   assert.deepEqual(listPlans().map(plan => [plan.id, plan.amount, plan.quota]), [
-    ['essencial', 51.85, 100],
-    ['profissional', 103.75, 300],
-    ['escala', 155.65, 600]
+    ['essencial', 39.99, 100],
+    ['profissional', 59.99, 300],
+    ['escala', 89.99, 600]
   ]);
 });
 
