@@ -1,7 +1,169 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lead Finder — cub4Studio</title><meta name="description" content="Encontre empresas, consulte informações públicas e organize sua lista de prospecção."><link rel="icon" href="/logo.svg"><link rel="stylesheet" href="/style.css"><meta name="robots" content="noindex, nofollow"></head><body>
-<aside><a class="brand" href="/"><img src="/logo.svg" alt="Símbolo do Lead Finder"><b>Lead<span>Finder</span></b></a><p class="eyebrow">PAINEL DE PROSPECÇÃO</p><nav><button aria-label="Buscar empresas" class="nav active" id="discover">◎ &nbsp; Buscar empresas</button><button aria-label="Empresas salvas" class="nav" id="saved">▤ &nbsp; Empresas salvas <span id="saved-count">0</span></button></nav><div class="side-bottom"><p>Feito para sua próxima oportunidade.</p><a href="https://cub4studio.com/#contato" target="_blank" rel="noopener">Quer um produto como este? ↗</a><small>Software feito pela cub4Studio</small></div></aside>
-<main><header><span>Painel <span class="slash">/</span> Lead Finder</span><span class="pill" id="mode-badge">Busca real indisponível</span></header><section class="intro"><p class="eyebrow">MENOS PESQUISA. MAIS FOCO.</p><h1>Sua próxima oportunidade<br>começa com uma <em>busca.</em></h1><p>Encontre empresas. Confira os detalhes.<br>Organize uma lista que vale a próxima conversa.</p></section>
-<form id="search-form" class="search-box"><div class="form-head"><h2>Encontre sua próxima oportunidade</h2><label class="mode-label">Fonte de dados <select id="mode"><option value="live" selected disabled>Busca real — não conectada</option><option value="demo" disabled>Exemplos — desativados</option></select></label></div><div class="fields"><label>Segmento<input id="niche" value="Clínica odontológica" maxlength="80" minlength="2" required placeholder="Ex.: Clínica odontológica"></label><label>Cidade ou região<input id="location" value="São Paulo, SP, Brasil" maxlength="100" minlength="2" required placeholder="Ex.: São Paulo, SP, Brasil"></label><label>Resultados<select id="limit"><option value="10">Até 10</option><option value="25">Até 25</option></select></label><button class="primary" id="search-button" disabled>Buscar empresas ↗</button></div><p id="data-note" class="note">A busca real ainda não está configurada. Nenhum resultado fictício será exibido automaticamente.</p></form>
-<div class="stats"><div><span>Empresas encontradas</span><strong id="total">0</strong></div><div><span>Site não listado</span><strong id="missing">0</strong></div><div><span>Telefone disponível</span><strong id="phones">0</strong></div><div><span>Empresas salvas</span><strong id="saved-stat">0</strong></div></div>
-<section class="results"><div class="result-head"><div><p class="eyebrow" id="result-label">SUAS PRÓXIMAS OPORTUNIDADES</p><h2 id="result-title">Resultados da busca</h2></div><button id="export" class="secondary" disabled>↓ Exportar CSV</button></div><div class="filters"><input id="filter-text" aria-label="Filtrar empresas" placeholder="Filtrar por nome ou categoria"><select id="website-filter" aria-label="Filtro de website"><option value="all">Todas as empresas</option><option value="missing">Site não listado</option><option value="present">Site listado</option></select><select id="sort" aria-label="Ordenar resultados"><option value="reviews">Mais avaliações</option><option value="name">Nome A–Z</option></select><span id="count">0 resultados</span></div><p class="notice" id="status" role="status">Conecte o provedor de dados para buscar empresas reais.</p><div class="table-wrap"><table><thead><tr><th>Empresa</th><th>Site</th><th>Telefone público</th><th>Avaliações</th><th>Seleção</th></tr></thead><tbody id="rows"></tbody></table></div><div id="empty"><span>◎</span><h3>Sua lista começa aqui.</h3><p>Faça sua primeira busca para consultar empresas.</p></div></section><footer>Dados públicos são um ponto de partida, não intenção de compra. Verifique antes de abordar.<span>Lead Finder · by cub4Studio</span></footer></main>
-<dialog id="detail"><div class="dialog-head"><span class="eyebrow">PERFIL DA EMPRESA</span><button id="close-detail" aria-label="Fechar perfil">✕</button></div><h2 id="detail-name"></h2><div id="detail-body"></div><label>Rascunho de abordagem<textarea id="draft" rows="5"></textarea></label><button class="primary" id="copy-draft">Copiar rascunho</button><p class="note">Modelo de mensagem. Revise e personalize antes de enviar. Nada é enviado automaticamente.</p></dialog><script type="module" src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0817">
+<title>Lead Finder — cub4Studio</title>
+<meta name="description" content="Encontre empresas, consulte informações públicas e organize sua lista de prospecção.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/logo.svg">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
+
+<div class="shell">
+<aside class="sidebar" aria-label="Navegação do painel">
+  <a class="brand" href="/"><img src="/logo.svg" alt="Símbolo do Lead Finder" width="38" height="38"><b>Lead<span>Finder</span></b></a>
+  <p class="eyebrow side-eyebrow">Painel de prospecção</p>
+  <nav class="side-nav">
+    <button type="button" class="nav active" id="discover" aria-pressed="true"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-text">Buscar empresas</span></button>
+    <button type="button" class="nav" id="saved" aria-pressed="false"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-text">Empresas salvas</span><span class="badge" id="saved-count">0</span></button>
+  </nav>
+  <div class="side-bottom">
+    <p>Feito para sua próxima oportunidade.</p>
+    <a href="https://cub4studio.com/#contato" target="_blank" rel="noopener">Quer um produto como este? ↗</a>
+    <small>Software feito pela cub4Studio</small>
+  </div>
+</aside>
+
+<main id="main">
+  <header class="topbar">
+    <span class="crumb">Painel <span class="slash">/</span> Lead Finder</span>
+    <span class="pill" id="mode-badge" data-state="off"><i aria-hidden="true"></i>Busca real indisponível</span>
+  </header>
+
+  <section class="intro">
+    <div>
+      <p class="eyebrow">Menos pesquisa. Mais foco.</p>
+      <h1>Sua próxima oportunidade<br>começa com uma <em>busca.</em></h1>
+    </div>
+    <p class="intro-sub">Encontre empresas. Confira os detalhes.<br>Organize uma lista que vale a próxima conversa.</p>
+  </section>
+
+  <form id="search-form" class="search-box" novalidate>
+    <div class="form-head">
+      <h2>Encontre sua próxima oportunidade</h2>
+      <label class="mode-label" for="mode">Fonte de dados
+        <select id="mode">
+          <option value="live" selected disabled>Busca real — não conectada</option>
+          <option value="demo" disabled>Exemplos — desativados</option>
+        </select>
+      </label>
+    </div>
+    <div class="fields">
+      <label for="niche">Segmento
+        <input id="niche" name="niche" value="Clínica odontológica" maxlength="80" minlength="2" required autocomplete="off" placeholder="Ex.: Clínica odontológica">
+      </label>
+      <label for="location">Cidade ou região
+        <input id="location" name="location" value="São Paulo, SP, Brasil" maxlength="100" minlength="2" required autocomplete="off" placeholder="Ex.: São Paulo, SP, Brasil">
+      </label>
+      <label for="limit">Resultados
+        <select id="limit" name="limit">
+          <option value="10">Até 10</option>
+          <option value="25">Até 25</option>
+        </select>
+      </label>
+      <button class="primary" id="search-button" type="submit" disabled><span class="btn-label">Buscar empresas ↗</span><span class="spinner" aria-hidden="true"></span></button>
+    </div>
+    <div class="form-foot">
+      <p id="data-note" class="note">A busca real ainda não está configurada. Nenhum resultado fictício será exibido automaticamente.</p>
+      <button type="button" class="ghost" id="cancel-search" hidden>Parar de aguardar</button>
+    </div>
+    <div class="progress" id="progress" hidden aria-hidden="true"><i></i></div>
+  </form>
+
+  <div class="stats" aria-label="Resumo da busca">
+    <div><span>Empresas encontradas</span><strong id="total" data-count="0">0</strong></div>
+    <div class="accent"><span>Site não listado</span><strong id="missing" data-count="0">0</strong></div>
+    <div><span>Telefone disponível</span><strong id="phones" data-count="0">0</strong></div>
+    <div><span>Empresas salvas</span><strong id="saved-stat" data-count="0">0</strong></div>
+  </div>
+
+  <section class="results" aria-labelledby="result-title">
+    <div class="result-head">
+      <div>
+        <p class="eyebrow" id="result-label">Suas próximas oportunidades</p>
+        <h2 id="result-title">Resultados da busca</h2>
+      </div>
+      <div class="result-actions">
+        <button type="button" id="clear-saved" class="secondary danger" hidden>Limpar lista</button>
+        <button type="button" id="export" class="secondary" disabled>↓ Exportar CSV</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="search-field">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="filter-text" type="search" aria-label="Filtrar empresas" placeholder="Filtrar por nome, categoria ou endereço" autocomplete="off">
+        <kbd aria-hidden="true">/</kbd>
+      </div>
+      <div class="chips" role="group" aria-label="Filtro de website">
+        <button type="button" class="chip active" data-website="all" aria-pressed="true">Todas</button>
+        <button type="button" class="chip" data-website="missing" aria-pressed="false">Site não listado</button>
+        <button type="button" class="chip" data-website="present" aria-pressed="false">Site listado</button>
+      </div>
+      <label class="sort-label" for="sort">Ordenar
+        <select id="sort" aria-label="Ordenar resultados">
+          <option value="reviews">Mais avaliações</option>
+          <option value="rating">Melhor nota</option>
+          <option value="name">Nome A–Z</option>
+        </select>
+      </label>
+      <span id="count" class="count">0 resultados</span>
+    </div>
+
+    <p class="notice" id="status" role="status" aria-live="polite">Conecte o provedor de dados para buscar empresas reais.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Empresa</th><th>Site</th><th>Telefone público</th><th>Avaliações</th><th class="th-action">Seleção</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div id="empty" class="empty">
+      <span aria-hidden="true">◎</span>
+      <h3 id="empty-title">Sua lista começa aqui.</h3>
+      <p id="empty-text">Faça sua primeira busca para consultar empresas.</p>
+      <button type="button" class="secondary" id="empty-action" hidden>Limpar filtros</button>
+    </div>
+  </section>
+
+  <footer>
+    <span>Dados públicos são um ponto de partida, não intenção de compra. Verifique antes de abordar.</span>
+    <span>Lead Finder · by cub4Studio</span>
+  </footer>
+</main>
+</div>
+
+<dialog id="detail" aria-labelledby="detail-name">
+  <div class="dialog-head">
+    <span class="eyebrow">Perfil da empresa</span>
+    <button type="button" id="close-detail" aria-label="Fechar perfil">✕</button>
+  </div>
+  <h2 id="detail-name"></h2>
+  <p class="detail-meta" id="detail-meta"></p>
+  <dl class="detail-grid" id="detail-body"></dl>
+  <div class="detail-actions">
+    <button type="button" class="save" id="detail-save">+ Salvar</button>
+    <a class="secondary" id="detail-call" href="#" hidden>Ligar</a>
+    <button type="button" class="secondary" id="detail-copy-phone" hidden>Copiar telefone</button>
+    <a class="secondary" id="detail-site" href="#" target="_blank" rel="noopener" hidden>Visitar site ↗</a>
+  </div>
+  <label for="draft">Rascunho de abordagem
+    <textarea id="draft" rows="5"></textarea>
+  </label>
+  <div class="dialog-foot">
+    <button type="button" class="primary" id="copy-draft">Copiar rascunho</button>
+    <p class="note">Modelo de mensagem. Revise e personalize antes de enviar. Nada é enviado automaticamente.</p>
+  </div>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

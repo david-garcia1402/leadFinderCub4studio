@@ -1,7 +1,169 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lead Finder — cub4Studio</title><meta name="description" content="Find local businesses, review public business details, and build your prospect shortlist."><link rel="icon" href="/logo.svg"><link rel="stylesheet" href="/style.css"><meta name="robots" content="noindex, nofollow"></head><body>
-<aside><a class="brand" href="/"><img src="/logo.svg" alt="cub4Studio symbol"><b>Lead<span>Finder</span></b></a><p class="eyebrow">PROSPECTING WORKSPACE</p><nav><button aria-label="Discover leads" class="nav active" id="discover">◎ &nbsp; Discover leads</button><button aria-label="Saved prospects" class="nav" id="saved">▤ &nbsp; Saved prospects <span id="saved-count">0</span></button></nav><div class="side-bottom"><p>Built for your next opportunity.</p><a href="https://cub4studio.com/#contato" target="_blank" rel="noopener">Want a tool like this? ↗</a><small>Custom software by cub4Studio</small></div></aside>
-<main><header><span>Workspace <span class="slash">/</span> Lead Finder</span><span class="pill" id="mode-badge">Live search unavailable</span></header><section class="intro"><p class="eyebrow">LESS SEARCHING. MORE FOCUS.</p><h1>Your next prospect<br>starts with a <em>search.</em></h1><p>Find local businesses. Review the details.<br>Build a shortlist worth reaching out to.</p></section>
-<form id="search-form" class="search-box"><div class="form-head"><h2>Find your next opportunity</h2><label class="mode-label">Data source <select id="mode"><option value="live" selected disabled>Live search — not connected</option><option value="demo" disabled>Sample data — disabled</option></select></label></div><div class="fields"><label>Business type<input id="niche" value="Dental clinic" maxlength="80" minlength="2" required placeholder="e.g. Dental clinic"></label><label>City or region<input id="location" value="Austin, TX, USA" maxlength="100" minlength="2" required placeholder="e.g. Austin, TX, USA"></label><label>Results<select id="limit"><option value="10">Up to 10</option><option value="25">Up to 25</option></select></label><button class="primary" id="search-button" disabled>Find leads ↗</button></div><p id="data-note" class="note">Live search is not configured yet. No fictional results will be shown automatically.</p></form>
-<div class="stats"><div><span>Businesses found</span><strong id="total">0</strong></div><div><span>Website not listed</span><strong id="missing">0</strong></div><div><span>Phone available</span><strong id="phones">0</strong></div><div><span>Saved prospects</span><strong id="saved-stat">0</strong></div></div>
-<section class="results"><div class="result-head"><div><p class="eyebrow" id="result-label">YOUR NEXT OPPORTUNITIES</p><h2 id="result-title">Search results</h2></div><button id="export" class="secondary" disabled>↓ Export CSV</button></div><div class="filters"><input id="filter-text" aria-label="Filter businesses" placeholder="Filter by name or category"><select id="website-filter" aria-label="Website filter"><option value="all">All businesses</option><option value="missing">Website not listed</option><option value="present">Website listed</option></select><select id="sort" aria-label="Sort results"><option value="reviews">Most reviewed</option><option value="name">Name A–Z</option></select><span id="count">0 results</span></div><p class="notice" id="status" role="status">Connect a data provider to search for real businesses.</p><div class="table-wrap"><table><thead><tr><th>Business</th><th>Website</th><th>Public phone</th><th>Reviews</th><th>Shortlist</th></tr></thead><tbody id="rows"></tbody></table></div><div id="empty"><span>◎</span><h3>A focused list starts here.</h3><p>Run your first search to explore business profiles.</p></div></section><footer>Public business data is a starting point, not buying intent. Verify details before outreach.<span>Lead Finder · by cub4Studio</span></footer></main>
-<dialog id="detail"><div class="dialog-head"><span class="eyebrow">BUSINESS PROFILE</span><button id="close-detail" aria-label="Close profile">✕</button></div><h2 id="detail-name"></h2><div id="detail-body"></div><label>Outreach draft<textarea id="draft" rows="5"></textarea></label><button class="primary" id="copy-draft">Copy draft</button><p class="note">Template draft. Review and personalize before sending. Nothing is sent automatically.</p></dialog><script type="module" src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0817">
+<title>Lead Finder — cub4Studio</title>
+<meta name="description" content="Find local businesses, review public business details, and build your prospect shortlist.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/logo.svg">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="shell">
+<aside class="sidebar" aria-label="Workspace navigation">
+  <a class="brand" href="/"><img src="/logo.svg" alt="cub4Studio symbol" width="38" height="38"><b>Lead<span>Finder</span></b></a>
+  <p class="eyebrow side-eyebrow">Prospecting workspace</p>
+  <nav class="side-nav">
+    <button type="button" class="nav active" id="discover" aria-pressed="true"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-text">Discover leads</span></button>
+    <button type="button" class="nav" id="saved" aria-pressed="false"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-text">Saved prospects</span><span class="badge" id="saved-count">0</span></button>
+  </nav>
+  <div class="side-bottom">
+    <p>Built for your next opportunity.</p>
+    <a href="https://cub4studio.com/#contato" target="_blank" rel="noopener">Want a tool like this? ↗</a>
+    <small>Custom software by cub4Studio</small>
+  </div>
+</aside>
+
+<main id="main">
+  <header class="topbar">
+    <span class="crumb">Workspace <span class="slash">/</span> Lead Finder</span>
+    <span class="pill" id="mode-badge" data-state="off"><i aria-hidden="true"></i>Live search unavailable</span>
+  </header>
+
+  <section class="intro">
+    <div>
+      <p class="eyebrow">Less searching. More focus.</p>
+      <h1>Your next prospect<br>starts with a <em>search.</em></h1>
+    </div>
+    <p class="intro-sub">Find local businesses. Review the details.<br>Build a shortlist worth reaching out to.</p>
+  </section>
+
+  <form id="search-form" class="search-box" novalidate>
+    <div class="form-head">
+      <h2>Find your next opportunity</h2>
+      <label class="mode-label" for="mode">Data source
+        <select id="mode">
+          <option value="live" selected disabled>Live search — not connected</option>
+          <option value="demo" disabled>Sample data — disabled</option>
+        </select>
+      </label>
+    </div>
+    <div class="fields">
+      <label for="niche">Business type
+        <input id="niche" name="niche" value="Dental clinic" maxlength="80" minlength="2" required autocomplete="off" placeholder="e.g. Dental clinic">
+      </label>
+      <label for="location">City or region
+        <input id="location" name="location" value="Austin, TX, USA" maxlength="100" minlength="2" required autocomplete="off" placeholder="e.g. Austin, TX, USA">
+      </label>
+      <label for="limit">Results
+        <select id="limit" name="limit">
+          <option value="10">Up to 10</option>
+          <option value="25">Up to 25</option>
+        </select>
+      </label>
+      <button class="primary" id="search-button" type="submit" disabled><span class="btn-label">Find leads ↗</span><span class="spinner" aria-hidden="true"></span></button>
+    </div>
+    <div class="form-foot">
+      <p id="data-note" class="note">Live search is not configured yet. No fictional results will be shown automatically.</p>
+      <button type="button" class="ghost" id="cancel-search" hidden>Stop waiting</button>
+    </div>
+    <div class="progress" id="progress" hidden aria-hidden="true"><i></i></div>
+  </form>
+
+  <div class="stats" aria-label="Search summary">
+    <div><span>Businesses found</span><strong id="total" data-count="0">0</strong></div>
+    <div class="accent"><span>Website not listed</span><strong id="missing" data-count="0">0</strong></div>
+    <div><span>Phone available</span><strong id="phones" data-count="0">0</strong></div>
+    <div><span>Saved prospects</span><strong id="saved-stat" data-count="0">0</strong></div>
+  </div>
+
+  <section class="results" aria-labelledby="result-title">
+    <div class="result-head">
+      <div>
+        <p class="eyebrow" id="result-label">Your next opportunities</p>
+        <h2 id="result-title">Search results</h2>
+      </div>
+      <div class="result-actions">
+        <button type="button" id="clear-saved" class="secondary danger" hidden>Clear list</button>
+        <button type="button" id="export" class="secondary" disabled>↓ Export CSV</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="search-field">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="filter-text" type="search" aria-label="Filter businesses" placeholder="Filter by name, category or address" autocomplete="off">
+        <kbd aria-hidden="true">/</kbd>
+      </div>
+      <div class="chips" role="group" aria-label="Website filter">
+        <button type="button" class="chip active" data-website="all" aria-pressed="true">All</button>
+        <button type="button" class="chip" data-website="missing" aria-pressed="false">Website not listed</button>
+        <button type="button" class="chip" data-website="present" aria-pressed="false">Website listed</button>
+      </div>
+      <label class="sort-label" for="sort">Sort
+        <select id="sort" aria-label="Sort results">
+          <option value="reviews">Most reviewed</option>
+          <option value="rating">Highest rated</option>
+          <option value="name">Name A–Z</option>
+        </select>
+      </label>
+      <span id="count" class="count">0 results</span>
+    </div>
+
+    <p class="notice" id="status" role="status" aria-live="polite">Connect a data provider to search for real businesses.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Business</th><th>Website</th><th>Public phone</th><th>Reviews</th><th class="th-action">Shortlist</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div id="empty" class="empty">
+      <span aria-hidden="true">◎</span>
+      <h3 id="empty-title">A focused list starts here.</h3>
+      <p id="empty-text">Run your first search to explore business profiles.</p>
+      <button type="button" class="secondary" id="empty-action" hidden>Clear filters</button>
+    </div>
+  </section>
+
+  <footer>
+    <span>Public business data is a starting point, not buying intent. Verify details before outreach.</span>
+    <span>Lead Finder · by cub4Studio</span>
+  </footer>
+</main>
+</div>
+
+<dialog id="detail" aria-labelledby="detail-name">
+  <div class="dialog-head">
+    <span class="eyebrow">Business profile</span>
+    <button type="button" id="close-detail" aria-label="Close profile">✕</button>
+  </div>
+  <h2 id="detail-name"></h2>
+  <p class="detail-meta" id="detail-meta"></p>
+  <dl class="detail-grid" id="detail-body"></dl>
+  <div class="detail-actions">
+    <button type="button" class="save" id="detail-save">+ Save</button>
+    <a class="secondary" id="detail-call" href="#" hidden>Call</a>
+    <button type="button" class="secondary" id="detail-copy-phone" hidden>Copy phone</button>
+    <a class="secondary" id="detail-site" href="#" target="_blank" rel="noopener" hidden>Visit website ↗</a>
+  </div>
+  <label for="draft">Outreach draft
+    <textarea id="draft" rows="5"></textarea>
+  </label>
+  <div class="dialog-foot">
+    <button type="button" class="primary" id="copy-draft">Copy draft</button>
+    <p class="note">Template draft. Review and personalize before sending. Nothing is sent automatically.</p>
+  </div>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
