@@ -37,14 +37,17 @@ function renderPlans(plans) {
 }
 
 function describeSession() {
+  const loginLink = document.querySelector('#session-card a[href="/entrar"]');
   if (!user) {
     sessionLine.textContent = 'Nenhuma sessão ativa neste navegador.';
     logout.hidden = true;
+    if (loginLink) loginLink.hidden = false;
     lead.textContent = 'Crie sua conta para reservar um plano. A cobrança só começa depois do checkout Mercado Pago.';
     return;
   }
   const sub = user.subscription || {};
   logout.hidden = false;
+  if (loginLink) loginLink.hidden = true;
   sessionLine.textContent = `${user.email} · ${sub.planName || 'sem plano'} · ${sub.remaining || 0}/${sub.quota || 0} empresas restantes`;
   lead.textContent = billing.configured
     ? 'Checkout Mercado Pago disponível. A franquia só é liberada depois da confirmação do webhook.'
