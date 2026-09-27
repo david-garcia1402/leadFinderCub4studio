@@ -55,7 +55,7 @@ test('subscription reserve is per user and blocks inactive accounts', async () =
   }
 });
 
-test('checkout stays pending until Mercado Pago credentials exist', async () => {
+test('checkout stays pending until the active provider has links or credentials', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'lf-chk-'));
   try {
     const store = await createStore(join(dir, 'accounts.json'));
@@ -63,7 +63,83 @@ test('checkout stays pending until Mercado Pago credentials exist', async () => 
     const billing = createBilling(store, {});
     const user = await auth.register({email:'e@example.com', password:'senha-forte'});
     assert.equal(billing.configured(), false);
+    assert.equal(billing.publicConfig().provider, 'kiwify');
     await assert.rejects(() => billing.startCheckout(user, 'essencial'), /ainda não configurado/);
+  } finally {
+    await rm(dir, {recursive:true, force:true});
+  }
+});
+
+test('Kiwify webhook activates by email and claims later signups', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'lf-kiwify-'));
+  try {
+    const store = await createStore(join(dir, 'accounts.json'));
+    const auth = createAuth(store);
+    const env = {
+      BILLING_PROVIDER: 'kiwify',
+      KIWIFY_WEBHOOK_TOKEN: 'tok-kiwify',
+      KIWIFY_CHECKOUT_ESSENCIAL: 'https://pay.kiwify.com.br/essencial',
+      KIWIFY_PRODUCT_ESSENCIAL: 'prod-essencial'
+    };
+    const billing = createBilling(store, env);
+    const user = await auth.register({email:'f@example.com', password:'senha-forte'});
+    const started = await billing.startCheckout(user, 'essencial');
+    assert.match(started.initPoint, /pay\.kiwify\.com\.br/);
+    assert.match(started.initPoint, /email=f%40example.com/);
+    await billing.handleWebhook({
+      headers: {},
+      query: {},
+      body: {
+        token: 'tok-kiwify',
+        webhook_event_type: 'compra_aprovada',
+        order_id: 'ord-1',
+        order_status: 'paid',
+        Product: {product_id:'prod-essencial', product_name:'Lead Finder Essencial'},
+        Customer: {email:'F@example.com'}
+      }
+    });
+    assert.equal(billing.statusFor(user.id).status, 'authorized');
+    assert.equal(billing.statusFor(user.id).quota, 100);
+    const later = createBilling(store, env);
+    await later.handleWebhook({
+      headers: {},
+      query: {},
+      body: {
+        token: 'tok-kiwify',
+        webhook_event_type: 'compra_aprovada',
+        order_id: 'ord-2',
+        Product: {product_id:'prod-essencial', product_name:'Essencial'},
+        Customer: {email:'novo@example.com'}
+      }
+    });
+    const created = await auth.register({email:'novo@example.com', password:'senha-forte'});
+    await later.claimForEmail(created.email);
+    assert.equal(later.statusFor(created.id).status, 'authorized');
+  } finally {
+    await rm(dir, {recursive:true, force:true});
+  }
+});
+
+test('hosted checkout webhook accepts a generic approved event', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'lf-hosted-'));
+  try {
+    const store = await createStore(join(dir, 'accounts.json'));
+    const auth = createAuth(store);
+    const env = {
+      BILLING_PROVIDER: 'hosted',
+      BILLING_WEBHOOK_SECRET: 'generic-secret',
+      CHECKOUT_URL_PROFISSIONAL: 'https://pay.example/pro'
+    };
+    const billing = createBilling(store, env);
+    const user = await auth.register({email:'g@example.com', password:'senha-forte'});
+    await billing.handleWebhook({
+      headers: {},
+      query: {},
+      body: {token:'generic-secret', event:'purchase.approved', email:'g@example.com', planId:'profissional', orderId:'h1'},
+      hint: 'hosted'
+    });
+    assert.equal(billing.statusFor(user.id).planId, 'profissional');
+    assert.equal(billing.statusFor(user.id).quota, 300);
   } finally {
     await rm(dir, {recursive:true, force:true});
   }

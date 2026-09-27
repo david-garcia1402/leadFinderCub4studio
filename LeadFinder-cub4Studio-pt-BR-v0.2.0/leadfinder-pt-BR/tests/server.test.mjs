@@ -10,7 +10,7 @@ test('HTTP demo, disabled live mode and static-file boundary',async()=>{
  const config=await (await fetch(base+'/api/config')).json();
  assert.equal(config.live,false);
  assert.equal(config.auth,true);
- assert.equal(config.billing.provider,'mercadopago');
+ assert.equal(config.billing.provider,'kiwify');
  assert.equal(config.billing.configured,false);
  const req=mode=>fetch(base+'/api/search',{method:'POST',headers:{'Content-Type':'application/json','X-Cub4-Client':'lead-finder'},body:JSON.stringify({niche:'Dentist',location:'Austin',limit:2,mode})});
  const demo=await (await req('demo')).json();assert.equal(demo.leads.length,2);assert.equal(demo.demo,true);
@@ -39,7 +39,7 @@ test('auth session, checkout gate and signed webhook',async()=>{
  assert.equal(live.status,402);
  const checkout=await fetch(base+'/api/billing/checkout',{method:'POST',headers:{...headers,cookie},body:JSON.stringify({planId:'essencial'})});
  assert.equal(checkout.status,503);
- assert.equal((await fetch(base+'/api/billing/webhook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'payment',data:{id:'1'}})})).status,401);
+ assert.equal((await fetch(base+'/api/billing/webhook/mercadopago',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'payment',data:{id:'1'}})})).status,401);
  const plans=await (await fetch(base+'/api/plans')).json();
  assert.equal(plans.plans.length,3);
  }finally{proc.kill();await rm(dir,{recursive:true,force:true});}

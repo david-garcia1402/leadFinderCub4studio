@@ -36,7 +36,7 @@ export function publicSubscription(sub, now = new Date()) {
     reserved,
     remaining: Math.max(0, quota - reserved),
     periodEnd: sub.currentPeriodEnd || null,
-    provider: 'mercadopago'
+    provider: sub.provider || null
   };
 }
 

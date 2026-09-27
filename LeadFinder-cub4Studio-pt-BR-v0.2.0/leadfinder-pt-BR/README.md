@@ -31,7 +31,7 @@ Não é um site puramente estático: o painel depende do servidor Node. Não abr
 - Prévia do produto em HTML/CSS, nítida em qualquer tela e sem imagens de banco genéricas. Empresas da prévia são fictícias e identificadas.
 - Três planos em colunas no desktop e empilhados no celular. Profissional em destaque.
 - Preços propostos: R$ 51,85 / 103,75 / 155,65; franquias propostas: 100 / 300 / 600 empresas. Não estão conectados ao consumo. Devem ser validados antes de venda.
-- CTA de interesse seleciona o plano e encaminha ao cadastro (`/entrar`); o checkout Mercado Pago só inicia com credenciais de servidor.
+- CTA de interesse seleciona o plano e encaminha ao cadastro (`/entrar`); o checkout (Kiwify ou outro provedor) só inicia com as variáveis do servidor.
 - Exemplos desativados por padrão. Nunca substitui silenciosamente a busca real por dados fictícios.
 - Preservados filtros, favoritos no navegador, CSV e rascunho de abordagem.
 - Configuração explícita de origem HTTPS, menor exposição de informações do servidor e restrição adicional para busca real local.
@@ -46,14 +46,22 @@ O teto local é global, não por assinante nem um teto financeiro no provedor. R
 Opcionalmente defina `ENABLE_SAMPLE_DATA=true` e escolha a fonte de exemplos no painel. Dados ficam explicitamente identificados como fictícios. Não use exemplos como resultados reais em anúncios. Dados salvos nesta versão ficam apenas no navegador.
 
 ## Estado real do produto
-Esta versão pt-BR agora tem contas com e-mail/senha, sessão HttpOnly e franquia por cliente. O checkout e os webhooks do Mercado Pago estão preparados, mas **não cobram** até `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` e um `APP_ORIGIN` HTTPS público estarem configurados. Não anunciar assinatura imediata nem retorno financeiro. Não exponha este backend com chave de busca ativa à internet sem essas proteções.
+Esta versão pt-BR agora tem contas com e-mail/senha, sessão HttpOnly e franquia por cliente. O checkout padrão é a **Kiwify**, com adaptadores para Mercado Pago e para qualquer checkout hospedado (Hotmart, Eduzz, Stripe Payment Link, etc.). **Não cobra** até os links/tokens do provedor estarem no `.env`. Use o mesmo e-mail da compra e da conta. Não anunciar assinatura imediata nem retorno financeiro.
 
-Ainda faltam antes de vender em escala: recuperação de acesso por e-mail; banco dedicado; exclusão/retenção de dados; documentos reais de privacidade/termos; observabilidade e validação ponta a ponta do Mercado Pago em produção. Não há pixels de publicidade nesta versão.
+Ainda faltam antes de vender em escala: recuperação de acesso por e-mail; banco dedicado; exclusão/retenção de dados; documentos reais de privacidade/termos; observabilidade e um pagamento de teste ponta a ponta. Não há pixels de publicidade nesta versão.
 
-## Contas e Mercado Pago
-Copie `.env.example` para `.env`. Contas ficam em `.data/accounts.json` (ou no `DATA_DIR` informado). Rotas: `/entrar`, `/conta`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/me`, `GET /api/plans`, `POST /api/billing/checkout`, `POST /api/billing/webhook`.
+## Contas e checkout
+Copie `.env.example` para `.env`. Contas ficam em `.data/accounts.json`. Rotas: `/entrar`, `/conta`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/me`, `GET /api/plans`, `POST /api/billing/checkout`, `POST /api/billing/webhook` (também `/kiwify`, `/mercadopago` e `/hosted`).
 
-Para ligar o checkout: defina `MP_ACCESS_TOKEN` (credencial de teste ou produção), `MP_WEBHOOK_SECRET` da aplicação no painel do Mercado Pago e `APP_ORIGIN` com a origem HTTPS pública. O webhook precisa ser alcançável em `/api/billing/webhook`. A franquia só é liberada depois da notificação `subscription_preapproval` / pagamento aprovado. Sem essas variáveis, criar conta funciona e o checkout responde 503.
+Defina `BILLING_PROVIDER=kiwify` (padrão), `mercadopago` ou `hosted`.
+
+Kiwify: crie 3 produtos/ofertas (Essencial, Profissional, Escala). Cole os links em `KIWIFY_CHECKOUT_*`, os `product_id` em `KIWIFY_PRODUCT_*` e o token de Apps → Webhooks em `KIWIFY_WEBHOOK_TOKEN`. Eventos: `compra_aprovada`, `subscription_renewed`, `compra_reembolsada`, `chargeback`, `subscription_canceled`, `subscription_late`. URL: `{APP_ORIGIN}/api/billing/webhook/kiwify`.
+
+Checkout genérico: `BILLING_PROVIDER=hosted`, `CHECKOUT_URL_*`, `BILLING_WEBHOOK_SECRET` e, se quiser, `BILLING_PRODUCT_*`. O webhook aceita `{ "token", "event":"purchase.approved", "email", "planId", "orderId" }` ou HMAC `x-billing-signature`.
+
+Mercado Pago: `BILLING_PROVIDER=mercadopago`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` e `APP_ORIGIN` HTTPS.
+
+A franquia libera no webhook ou, se a pessoa pagar antes de criar a conta, no próximo login com o mesmo e-mail. Sem as variáveis, criar conta funciona e o checkout responde 503.
 
 A busca real exige sessão e assinatura autorizada. Os exemplos (`ENABLE_SAMPLE_DATA=true`) continuam disponíveis sem conta, só para prévia local.
 
@@ -69,7 +77,7 @@ Preços e franquias são hipóteses comerciais, não recomendações baseadas em
 `public/workspace.html`, `public/app.js`, `public/style.css`: painel.
 `public/auth.html`, `public/account.html` e respectivos JS: conta e plano.
 `public/logo.svg`: símbolo vetorial.
-`server.mjs` e `lib/`: backend, autenticação e preparação Mercado Pago.
+`server.mjs` e `lib/`: backend, autenticação e provedores de checkout (Kiwify, Mercado Pago, genérico).
 Depois de qualquer edição, execute npm test e npm run build para atualizar dist.
 
 ## Validação
@@ -83,4 +91,4 @@ Defina `PUBLIC_SITE_URL` com a origem HTTPS real desta versão, sem caminho. Con
 
 The server emits canonical/og:url, a landing-only sitemap and robots rules. The workspace has noindex. Localized title, description, Open Graph, Twitter summary and SoftwareApplication JSON-LD describe existing features. No paid Offer schema is published before billing exists. No ranking or rich-result guarantee.
 
-Plan CTAs now send visitors to `/entrar` with the selected plan. The local prospecting brief remains available. Checkout is implemented as a Mercado Pago preapproval flow and stays inactive without credentials. No analytics conversion is recorded.
+Plan CTAs now send visitors to `/entrar` with the selected plan. The local prospecting brief remains available. Checkout uses Kiwify by default and can switch to Mercado Pago or another hosted checkout. It stays inactive without credentials. No analytics conversion is recorded.

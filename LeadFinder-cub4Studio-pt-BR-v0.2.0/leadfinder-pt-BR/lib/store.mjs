@@ -1,7 +1,7 @@
 import {mkdir,readFile,rename,writeFile} from 'node:fs/promises';
 import {dirname} from 'node:path';
 
-const empty = () => ({users:[],sessions:[],subscriptions:[],checkouts:[],events:[]});
+const empty = () => ({users:[],sessions:[],subscriptions:[],checkouts:[],events:[],entitlements:[]});
 
 export async function createStore(file) {
   await mkdir(dirname(file), {recursive:true});
@@ -13,7 +13,8 @@ export async function createStore(file) {
       sessions: Array.isArray(raw.sessions) ? raw.sessions : [],
       subscriptions: Array.isArray(raw.subscriptions) ? raw.subscriptions : [],
       checkouts: Array.isArray(raw.checkouts) ? raw.checkouts : [],
-      events: Array.isArray(raw.events) ? raw.events : []
+      events: Array.isArray(raw.events) ? raw.events : [],
+      entitlements: Array.isArray(raw.entitlements) ? raw.entitlements : []
     };
   } catch (e) {
     if (e.code !== 'ENOENT') throw new Error('Arquivo de contas ilegível; recusando iniciar sem isolamento de clientes.');

@@ -48,14 +48,25 @@ function sendError(res, error, fallback = 400) {
   send(res, error.status || fallback, {error: error.message || 'Não foi possível concluir a solicitação.'});
 }
 
-async function body(req, limit = 8192) {
+async function readBody(req, limit = 8192) {
   let text = '';
   for await (const chunk of req) {
     text += chunk;
     if (text.length > limit) throw Object.assign(new Error('Request too large.'), {status:413});
   }
+  return text;
+}
+
+async function body(req, limit = 8192) {
+  const text = await readBody(req, limit);
   if (!text) return {};
   return JSON.parse(text);
+}
+
+async function sessionUser(req, user) {
+  if (!user) return null;
+  await billing.claimForEmail(user.email);
+  return publicUser(user, billing.statusFor(user.id));
 }
 
 function clientIp(req) {
@@ -83,7 +94,7 @@ function sessionExtra(token, clear = false) {
 }
 
 function isWebhook(url) {
-  return url.pathname === '/api/billing/webhook';
+  return url.pathname === '/api/billing/webhook' || url.pathname.startsWith('/api/billing/webhook/');
 }
 
 const server = http.createServer(async (req, res) => {
@@ -119,14 +130,14 @@ const server = http.createServer(async (req, res) => {
       const payload = await body(req);
       const user = await auth.register(payload);
       const session = await auth.login({email: user.email, password: payload.password});
-      return send(res, 201, {user: publicUser(session.user, billing.statusFor(session.user.id))}, sessionExtra(session.token));
+      return send(res, 201, {user: await sessionUser(req, session.user)}, sessionExtra(session.token));
     }
 
     if (url.pathname === '/api/auth/login' && req.method === 'POST') {
       if (limited(clientIp(req), 'login', 12, 15 * 60 * 1000)) return send(res, 429, {error: 'Muitas tentativas. Aguarde alguns minutos.'});
       const payload = await body(req);
       const session = await auth.login(payload);
-      return send(res, 200, {user: publicUser(session.user, billing.statusFor(session.user.id))}, sessionExtra(session.token));
+      return send(res, 200, {user: await sessionUser(req, session.user)}, sessionExtra(session.token));
     }
 
     if (url.pathname === '/api/auth/logout' && req.method === 'POST') {
@@ -137,7 +148,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/me' && req.method === 'GET') {
       const user = requestUser(req);
       if (!user) return send(res, 401, {error: 'Entre na sua conta para continuar.', user: null});
-      return send(res, 200, {user: publicUser(user, billing.statusFor(user.id))});
+      return send(res, 200, {user: await sessionUser(req, user)});
     }
 
     if (url.pathname === '/api/billing/checkout' && req.method === 'POST') {
@@ -149,10 +160,18 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, checkout);
     }
 
-    if (url.pathname === '/api/billing/webhook' && req.method === 'POST') {
-      const payload = await body(req, 65536);
+    if (isWebhook(url) && req.method === 'POST') {
+      const raw = await readBody(req, 65536);
+      const payload = raw ? JSON.parse(raw) : {};
       const query = Object.fromEntries(url.searchParams.entries());
-      const result = await billing.handleWebhook({headers: req.headers, query, body: payload});
+      const hint = url.pathname.split('/').pop();
+      const result = await billing.handleWebhook({
+        headers: req.headers,
+        query,
+        body: payload,
+        raw,
+        hint: hint === 'webhook' ? undefined : hint
+      });
       return send(res, 200, result);
     }
 
@@ -242,5 +261,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`cub4Studio Lead Finder running at http://${host}:${port} | ${live ? 'live configured' : 'live unavailable'} | billing ${billing.configured() ? 'mercadopago ready' : 'mercadopago pending credentials'}`);
+  const billingState = billing.publicConfig();
+  console.log(`cub4Studio Lead Finder running at http://${host}:${port} | ${live ? 'live configured' : 'live unavailable'} | billing ${billingState.provider} ${billingState.configured ? 'ready' : 'pending credentials'}`);
 });
