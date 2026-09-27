@@ -8,6 +8,7 @@ test('launch defaults reject fictional data, support landing/workspace and respe
   const base='http://127.0.0.1:4191';
   assert.deepEqual(await (await fetch(base+'/api/config')).json(),{live:false,preview:false});
   for(const route of ['/','/app','/logo.svg','/landing.css','/landing.js'])assert.equal((await fetch(base+route)).status,200);
+  for(const route of ['/fonts/plus-jakarta-sans-latin-wght-normal.woff2','/fonts/plus-jakarta-sans-latin-wght-italic.woff2']){const font=await fetch(base+route);assert.equal(font.status,200);assert.equal(font.headers.get('content-type'),'font/woff2');}
   assert.match(await (await fetch(base+'/robots.txt')).text(), /Sitemap: https:\/\/leadfinder.example\/sitemap.xml/);
   assert.match(await (await fetch(base+'/sitemap.xml')).text(), /<loc>https:\/\/leadfinder.example\/<\/loc>/);
   assert.equal((await fetch(base+'/app')).headers.get('x-robots-tag'), 'noindex, nofollow');
