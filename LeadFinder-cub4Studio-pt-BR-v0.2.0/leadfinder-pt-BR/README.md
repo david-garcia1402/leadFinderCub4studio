@@ -31,7 +31,7 @@ Não é um site puramente estático: o painel depende do servidor Node. Não abr
 - Prévia do produto em HTML/CSS, nítida em qualquer tela e sem imagens de banco genéricas. Empresas da prévia são fictícias e identificadas.
 - Três planos em colunas no desktop e empilhados no celular. Profissional em destaque.
 - Preços propostos: R$ 51,85 / 103,75 / 155,65; franquias propostas: 100 / 300 / 600 empresas. Não estão conectados ao consumo. Devem ser validados antes de venda.
-- CTA de interesse seleciona o plano e encaminha ao contato institucional; não existe checkout nem cadastro de lista de espera.
+- CTA de interesse seleciona o plano e encaminha ao cadastro (`/entrar`); o checkout Mercado Pago só inicia com credenciais de servidor.
 - Exemplos desativados por padrão. Nunca substitui silenciosamente a busca real por dados fictícios.
 - Preservados filtros, favoritos no navegador, CSV e rascunho de abordagem.
 - Configuração explícita de origem HTTPS, menor exposição de informações do servidor e restrição adicional para busca real local.
@@ -46,9 +46,16 @@ O teto local é global, não por assinante nem um teto financeiro no provedor. R
 Opcionalmente defina `ENABLE_SAMPLE_DATA=true` e escolha a fonte de exemplos no painel. Dados ficam explicitamente identificados como fictícios. Não use exemplos como resultados reais em anúncios. Dados salvos nesta versão ficam apenas no navegador.
 
 ## Estado real do produto
-Esta entrega melhora a apresentação comercial e a experiência, mas NÃO implementa um SaaS pago multiusuário. Não anunciar assinatura imediata nem retorno financeiro. A operação ao vivo permanece local. Uma restrição por IP/headers não substitui autenticação e pode depender do proxy; não exponha este backend com chave ativa à internet.
+Esta versão pt-BR agora tem contas com e-mail/senha, sessão HttpOnly e franquia por cliente. O checkout e os webhooks do Mercado Pago estão preparados, mas **não cobram** até `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` e um `APP_ORIGIN` HTTPS público estarem configurados. Não anunciar assinatura imediata nem retorno financeiro. Não exponha este backend com chave de busca ativa à internet sem essas proteções.
 
-Antes de abrir assinaturas: autenticação e recuperação de acesso; banco com isolamento de clientes; créditos transacionais; checkout e webhooks idempotentes; autorização de buscas por assinatura; exclusão/retencão de dados; documentos reais de privacidade/termos; logs, proteção contra abuso e observabilidade; validação do fornecedor em produção. Conferir direitos de uso e condições do fornecedor. Não há pixels de publicidade nesta versão.
+Ainda faltam antes de vender em escala: recuperação de acesso por e-mail; banco dedicado; exclusão/retenção de dados; documentos reais de privacidade/termos; observabilidade e validação ponta a ponta do Mercado Pago em produção. Não há pixels de publicidade nesta versão.
+
+## Contas e Mercado Pago
+Copie `.env.example` para `.env`. Contas ficam em `.data/accounts.json` (ou no `DATA_DIR` informado). Rotas: `/entrar`, `/conta`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/me`, `GET /api/plans`, `POST /api/billing/checkout`, `POST /api/billing/webhook`.
+
+Para ligar o checkout: defina `MP_ACCESS_TOKEN` (credencial de teste ou produção), `MP_WEBHOOK_SECRET` da aplicação no painel do Mercado Pago e `APP_ORIGIN` com a origem HTTPS pública. O webhook precisa ser alcançável em `/api/billing/webhook`. A franquia só é liberada depois da notificação `subscription_preapproval` / pagamento aprovado. Sem essas variáveis, criar conta funciona e o checkout responde 503.
+
+A busca real exige sessão e assinatura autorizada. Os exemplos (`ENABLE_SAMPLE_DATA=true`) continuam disponíveis sem conta, só para prévia local.
 
 ## Análise para campanha
 A dor mais concreta é o tempo gasto procurando empresas e organizando prospecção. Público inicial sugerido: freelancers de sites e pequenas agências. Oferta: encontrar empresas por região e priorizar as que não têm site listado. Não alegar “clientes prontos para comprar” nem “empresas sem site confirmado”.
@@ -60,8 +67,9 @@ Preços e franquias são hipóteses comerciais, não recomendações baseadas em
 `public/landing.css`: identidade e layout.
 `public/landing.js`: seleção de interesse.
 `public/workspace.html`, `public/app.js`, `public/style.css`: painel.
+`public/auth.html`, `public/account.html` e respectivos JS: conta e plano.
 `public/logo.svg`: símbolo vetorial.
-`server.mjs` e `lib/`: backend e integração.
+`server.mjs` e `lib/`: backend, autenticação e preparação Mercado Pago.
 Depois de qualquer edição, execute npm test e npm run build para atualizar dist.
 
 ## Validação
@@ -75,4 +83,4 @@ Defina `PUBLIC_SITE_URL` com a origem HTTPS real desta versão, sem caminho. Con
 
 The server emits canonical/og:url, a landing-only sitemap and robots rules. The workspace has noindex. Localized title, description, Open Graph, Twitter summary and SoftwareApplication JSON-LD describe existing features. No paid Offer schema is published before billing exists. No ranking or rich-result guarantee.
 
-Plan CTAs populate a local prospecting brief with plan, monthly price, service and target market. Visitors copy it and paste it into their conversation on the existing corporate contact page. No lead is automatically sent, registered or stored; no checkout is implemented. No analytics conversion is recorded.
+Plan CTAs now send visitors to `/entrar` with the selected plan. The local prospecting brief remains available. Checkout is implemented as a Mercado Pago preapproval flow and stays inactive without credentials. No analytics conversion is recorded.

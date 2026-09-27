@@ -11,6 +11,8 @@ test('SEO uses configured HTTPS origins and reciprocal locale links only', () =>
   assert.match(seoLinks(env), /rel="canonical" href="https:\/\/en.example.com\/"/);
   assert.match(sitemap(env), /<loc>https:\/\/en.example.com\/<\/loc>/);
   assert.match(robots(env), /Disallow: \/api\//);
+  assert.match(robots(env), /Disallow: \/entrar/);
+  assert.match(robots(env), /Disallow: \/conta/);
   assert.doesNotMatch(seoLinks({...env, PUBLIC_SITE_URL:'https://other.example.com'}), /hreflang/);
 });
 test('localized pricing and plan handoff agree, without claiming active subscriptions', async () => {
