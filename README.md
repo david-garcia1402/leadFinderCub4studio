@@ -8,9 +8,9 @@ Separate English (US) and Portuguese (Brazil) Node deployments.
 | Professional / Profissional | US$ 19.99 | R$ 59,99 | 300 |
 | Scale / Escala | US$ 29.99 | R$ 89,99 | 600 |
 
-Brazil uses **independent proposed BRL launch prices** (R$ 39,99 / 59,99 / 89,99), not a live USD conversion, payment-provider rate or tax calculation. The US version keeps the USD list. Subscriptions remain unavailable.
+Brazil uses **independent BRL prices** (R$ 39,99 / 59,99 / 89,99), not a live USD conversion, payment-provider rate or tax calculation. The US version keeps the USD list and does not accept payment.
 
-Subscriptions, billing and per-customer quotas are not implemented. Allowances remain launch proposals and require cost validation. CTAs qualify launch interest; they do not accept payments or promise immediate activation.
+The Brazil app opens the Kiwify checkout for Essencial, Profissional and Escala after account login. The monthly allowance is released only after the Kiwify webhook confirms the payment for the same email. The US CTAs still qualify launch interest and do not accept payments.
 
 ## Run and validate
 

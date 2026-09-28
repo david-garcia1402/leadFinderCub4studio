@@ -31,7 +31,7 @@ Não é um site puramente estático: o painel depende do servidor Node. Não abr
 - Prévia do produto em HTML/CSS, nítida em qualquer tela e sem imagens de banco genéricas. Empresas da prévia são fictícias e identificadas.
 - Três planos em colunas no desktop e empilhados no celular. Profissional em destaque.
 - Preços propostos: R$ 39,99 / 59,99 / 89,99; franquias propostas: 100 / 300 / 600 empresas. Não estão conectados ao consumo. Devem ser validados antes de venda.
-- CTA de interesse seleciona o plano e encaminha ao contato institucional; não existe checkout nem cadastro de lista de espera.
+- O botão de cada plano abre `/entrar?plano=` e, depois do login, o checkout Kiwify correspondente.
 - Exemplos desativados por padrão. Nunca substitui silenciosamente a busca real por dados fictícios.
 - Preservados filtros, favoritos no navegador, CSV e rascunho de abordagem.
 - Configuração explícita de origem HTTPS, menor exposição de informações do servidor e restrição adicional para busca real local.
@@ -46,7 +46,7 @@ O teto local é global, não por assinante nem um teto financeiro no provedor. R
 Opcionalmente defina `ENABLE_SAMPLE_DATA=true` e escolha a fonte de exemplos no painel. Dados ficam explicitamente identificados como fictícios. Não use exemplos como resultados reais em anúncios. Dados salvos nesta versão ficam apenas no navegador.
 
 ## Estado real do produto
-Esta versão pt-BR agora tem contas com e-mail/senha, sessão HttpOnly e franquia por cliente. O checkout padrão é a **Kiwify**, com adaptadores para Mercado Pago e para qualquer checkout hospedado (Hotmart, Eduzz, Stripe Payment Link, etc.). **Não cobra** até os links/tokens do provedor estarem no `.env`. Use o mesmo e-mail da compra e da conta. Não anunciar assinatura imediata nem retorno financeiro.
+Esta versão pt-BR agora tem contas com e-mail/senha, sessão HttpOnly e franquia por cliente. O checkout padrão é a **Kiwify**, com adaptadores para Mercado Pago e para qualquer checkout hospedado (Hotmart, Eduzz, Stripe Payment Link, etc.). Sem variáveis, os três checkouts públicos (Essencial, Profissional e Escala) são usados. A franquia só libera com `KIWIFY_WEBHOOK_TOKEN`. Use o mesmo e-mail da compra e da conta. Não anunciar retorno financeiro.
 
 Ainda faltam antes de vender em escala: recuperação de acesso por e-mail; banco dedicado; exclusão/retenção de dados; documentos reais de privacidade/termos; observabilidade e um pagamento de teste ponta a ponta. Não há pixels de publicidade nesta versão.
 
