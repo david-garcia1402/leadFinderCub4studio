@@ -10,6 +10,7 @@ import {createStore} from './lib/store.mjs';
 import {createAuth,parseCookies,publicUser,sessionCookie} from './lib/auth.mjs';
 import {listPlans} from './lib/plans.mjs';
 import {createBilling} from './lib/billing.mjs';
+import {createCredentials} from './lib/credentials.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const arg = name => {
@@ -19,15 +20,16 @@ const arg = name => {
 const port = Number(arg('--port') || process.env.PORT || 4173);
 const host = arg('--host') || process.env.HOST || '127.0.0.1';
 const preview = process.env.ENABLE_SAMPLE_DATA === 'true';
-const live = process.env.ENABLE_LIVE_SEARCH === 'true' && !!process.env.OUTSCRAPER_API_KEY;
 const dataDir = process.env.DATA_DIR || root + '.data';
 const store = await createStore(dataDir.replace(/\/?$/, '/') + 'accounts.json');
 const auth = createAuth(store);
 const billing = createBilling(store, process.env);
+const credentials = createCredentials(store, process.env);
+const live = process.env.ENABLE_LIVE_SEARCH === 'true' && credentials.configured;
 const jobs = new Map();
 const cache = new Map();
-let busy = false;
-let lastLive = 0;
+const busy = new Set();
+const lastLive = new Map();
 const authHits = new Map();
 
 const headers = {
@@ -97,10 +99,24 @@ function isWebhook(url) {
   return url.pathname === '/api/billing/webhook' || url.pathname.startsWith('/api/billing/webhook/');
 }
 
+function clearSearches(userId) {
+  for (const [id, job] of jobs) if (job.userId === userId) jobs.delete(id);
+  for (const key of cache.keys()) if (key.startsWith(userId + ':')) cache.delete(key);
+}
+
+function activeSubscription(userId) {
+  const sub = billing.statusFor(userId);
+  const expiresAt = new Date(sub.periodEnd || '').getTime();
+  if (!['authorized','active'].includes(sub.status) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    throw Object.assign(new Error('Assinatura inativa. Confirme o pagamento do Lead Finder para buscar.'), {status:402});
+  }
+  return sub;
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
-    if (req.method === 'POST' && !isWebhook(url)) {
+    if (['POST','DELETE'].includes(req.method) && !isWebhook(url)) {
       if (req.headers.origin && req.headers.origin !== (process.env.APP_ORIGIN || `http://${req.headers.host}`)) {
         return send(res, 403, {error: 'Cross-origin requests are not allowed.'});
       }
@@ -151,6 +167,25 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {user: await sessionUser(req, user)});
     }
 
+    if (url.pathname === '/api/integrations/outscraper') {
+      const user = requestUser(req);
+      if (!user) return send(res, 401, {error:'Entre na sua conta para conectar o Outscraper.'});
+      if (req.method === 'GET') return send(res, 200, credentials.status(user.id));
+      if (!['POST','DELETE'].includes(req.method)) return send(res, 405, {error:'Método não permitido.'});
+      if (busy.has(user.id)) return send(res, 409, {error:'Aguarde a solicitação de busca terminar antes de alterar a conexão.'});
+      if (limited(user.id, 'connection', 10, 60 * 1000)) return send(res, 429, {error:'Aguarde antes de alterar a conexão novamente.'});
+      busy.add(user.id);
+      try {
+        const result = req.method === 'DELETE'
+          ? await credentials.remove(user.id)
+          : await credentials.save(user.id, (await body(req)).apiKey);
+        clearSearches(user.id);
+        return send(res, 200, result);
+      } finally {
+        busy.delete(user.id);
+      }
+    }
+
     if (url.pathname === '/api/billing/checkout' && req.method === 'POST') {
       const user = requestUser(req);
       if (!user) return send(res, 401, {error: 'Entre na sua conta para assinar um plano.'});
@@ -186,35 +221,43 @@ const server = http.createServer(async (req, res) => {
       if (!live) return send(res, 503, {error: 'Busca real ainda indisponível. Entre em contato com a cub4Studio.'});
       const user = requestUser(req);
       if (!user) return send(res, 401, {error: 'Entre na sua conta para usar a busca real.'});
-      const quota = await billing.reserve(user.id, search.limit);
-      const cacheKey = user.id + ':' + JSON.stringify(search).toLowerCase();
-      if (cache.has(cacheKey)) return send(res, 200, {...cache.get(cacheKey), cached: true, quota});
-      if (busy || Date.now() - lastLive < 10000) return send(res, 429, {error: 'Aguarde antes de iniciar outra busca.'});
-      busy = true;
-      lastLive = Date.now();
+      const subscription = activeSubscription(user.id);
+      const connection = credentials.read(user.id);
+      const cacheKey = user.id + ':' + connection.version + ':' + JSON.stringify(search).toLowerCase();
+      if (cache.has(cacheKey)) return send(res, 200, {...cache.get(cacheKey), cached: true, quota:subscription});
+      const existing = [...jobs.entries()].find(([,job]) => job.key === cacheKey);
+      if (existing) return send(res, 202, {pending:true, jobId:existing[0], quota:subscription});
+      if (busy.has(user.id) || Date.now() - (lastLive.get(user.id) || 0) < 10000) return send(res, 429, {error: 'Aguarde antes de iniciar outra busca.'});
+      busy.add(user.id);
       try {
-        const result = await beginSearch(search, process.env.OUTSCRAPER_API_KEY);
+        const quota = await billing.reserve(user.id, search.limit);
+        lastLive.set(user.id, Date.now());
+        const result = await beginSearch(search, connection.apiKey);
         if (result.pending) {
           const jobId = randomUUID();
-          jobs.set(jobId, {providerId: result.providerId, key: cacheKey, userId: user.id, last: 0});
+          jobs.set(jobId, {providerId: result.providerId, key: cacheKey, userId: user.id, version:connection.version, last: 0});
           return send(res, 202, {pending: true, jobId, quota});
         }
         cache.set(cacheKey, result);
         return send(res, 200, {...result, quota});
       } finally {
-        busy = false;
+        busy.delete(user.id);
       }
     }
 
     if (url.pathname.startsWith('/api/jobs/') && req.method === 'GET') {
       const user = requestUser(req);
       if (!user) return send(res, 401, {error: 'Entre na sua conta para acompanhar a busca.'});
+      activeSubscription(user.id);
       const jobId = url.pathname.split('/').pop();
       const job = jobs.get(jobId);
       if (!job || job.userId !== user.id) return send(res, 404, {error: 'Sessão de busca expirada. Confira o painel do provedor antes de repetir.'});
+      const connection = credentials.read(user.id);
+      if (connection.version !== job.version) return send(res, 409, {error:'A conexão mudou. Confira a busca no painel do Outscraper.'});
       if (Date.now() - job.last < 5000) return send(res, 202, {pending: true});
       job.last = Date.now();
-      const result = await checkSearch(job.providerId, process.env.OUTSCRAPER_API_KEY);
+      const result = await checkSearch(job.providerId, connection.apiKey);
+      if (jobs.get(jobId) !== job) return send(res, 409, {error:'A conexão mudou. Confira a busca no painel do Outscraper.'});
       if (!result.pending) {
         cache.set(job.key, result);
         jobs.delete(jobId);

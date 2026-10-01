@@ -10,13 +10,13 @@ Separate English (US) and Portuguese (Brazil) Node deployments.
 
 Brazil uses **independent BRL prices** (R$ 39,99 / 59,99 / 89,99), not a live USD conversion, payment-provider rate or tax calculation. The US version keeps the USD list and does not accept payment.
 
-The Brazil app opens the Kiwify checkout for Essencial, Profissional and Escala after account login. The monthly allowance is released only after the Kiwify webhook confirms the payment for the same email. The US CTAs still qualify launch interest and do not accept payments.
+The Brazil app opens the Kiwify checkout for Essencial, Profissional and Escala after account login. The monthly software allowance is released only after the Kiwify webhook confirms the payment for the same email. Each Brazil customer must also connect their own Outscraper API key in /conta. Outscraper data credits and charges are separate from the Lead Finder subscription; checkout does not create an Outscraper account. Customer keys are encrypted using the server-only CREDENTIAL_ENCRYPTION_KEY. The US CTAs still qualify launch interest and do not accept payments.
 
 ## Run and validate
 
 In either `LeadFinder-cub4Studio-*/leadfinder-*` directory, run `npm test`, `npm run build`, and `npm run dev`. Requires Node 22.9+. There are no production dependencies. Builds are generated locally in ignored `dist/` folders.
 
-Copy `.env.example` to `.env` and configure the real HTTPS `PUBLIC_SITE_URL` before production indexing. Configure both locale origins (`EN_SITE_URL`, `PT_BR_SITE_URL`) consistently in both deployments. Without a valid public origin, indexing is disabled intentionally. Keep API keys private and real searches local until customer authentication and billing are implemented.
+Copy `.env.example` to `.env` and configure the real HTTPS `PUBLIC_SITE_URL` before production indexing. Configure both locale origins (`EN_SITE_URL`, `PT_BR_SITE_URL`) consistently in both deployments. Without a valid public origin, indexing is disabled intentionally. Keep secrets private. The Brazil app uses customer-owned keys; see its README for setup and current storage/job limitations. The English app still uses its existing local search configuration.
 
 ## Changes
 

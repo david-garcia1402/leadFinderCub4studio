@@ -22,7 +22,7 @@ test('HTTP demo, disabled live mode and static-file boundary',async()=>{
 
 test('auth session, checkout gate and signed webhook',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'lf-auth-http-'));
- const proc=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'4193',HOST:'127.0.0.1',DATA_DIR:dir,ENABLE_LIVE_SEARCH:'true',OUTSCRAPER_API_KEY:'test-key',ENABLE_SAMPLE_DATA:'false',MP_WEBHOOK_SECRET:'whsec',APP_ORIGIN:'http://127.0.0.1:4193',BILLING_PROVIDER:'kiwify',KIWIFY_CHECKOUT_ESSENCIAL:'https://pay.kiwify.com.br/UaYc7RN',KIWIFY_CHECKOUT_PROFISSIONAL:'https://pay.kiwify.com.br/mE9NqXs',KIWIFY_CHECKOUT_ESCALA:'https://pay.kiwify.com.br/kgDUfXS'},stdio:['ignore','pipe','pipe']});
+ const proc=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'4193',HOST:'127.0.0.1',DATA_DIR:dir,ENABLE_LIVE_SEARCH:'true',CREDENTIAL_ENCRYPTION_KEY:Buffer.alloc(32,1).toString('base64'),ENABLE_SAMPLE_DATA:'false',MP_WEBHOOK_SECRET:'whsec',APP_ORIGIN:'http://127.0.0.1:4193',BILLING_PROVIDER:'kiwify',KIWIFY_CHECKOUT_ESSENCIAL:'https://pay.kiwify.com.br/UaYc7RN',KIWIFY_CHECKOUT_PROFISSIONAL:'https://pay.kiwify.com.br/mE9NqXs',KIWIFY_CHECKOUT_ESCALA:'https://pay.kiwify.com.br/kgDUfXS'},stdio:['ignore','pipe','pipe']});
  try{await new Promise((resolve,reject)=>{proc.stdout.once('data',resolve);proc.once('error',reject);proc.once('exit',code=>reject(new Error('Server exited '+code)));});
  const base='http://127.0.0.1:4193';
  const headers={'Content-Type':'application/json','X-Cub4-Client':'lead-finder',Origin:'http://127.0.0.1:4193'};

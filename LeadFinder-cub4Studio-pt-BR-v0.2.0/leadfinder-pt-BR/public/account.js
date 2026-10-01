@@ -7,6 +7,50 @@ const logout = document.getElementById('logout');
 const plansBox = document.getElementById('plans');
 let user = null;
 let billing = {configured:false, label:'Checkout'};
+const keyInput = document.getElementById('outscraper-key');
+const connectionStatus = document.getElementById('outscraper-status');
+const saveKey = document.getElementById('save-outscraper');
+const removeKey = document.getElementById('remove-outscraper');
+let connection = {configured:false, connected:false};
+let changingConnection = false;
+
+function renderConnection() {
+  keyInput.disabled = !user || !connection.configured || changingConnection;
+  saveKey.disabled = keyInput.disabled;
+  removeKey.disabled = !user || !connection.connected || changingConnection;
+  connectionStatus.textContent = !user ? 'Entre para conectar sua conta do Outscraper.'
+    : !connection.configured ? 'Conexão indisponível. Entre em contato com a cub4Studio.'
+    : connection.connected ? 'Chave salva. As buscas usarão sua conta do Outscraper.'
+    : 'Nenhuma chave conectada. Adicione sua chave para fazer buscas reais.';
+}
+
+async function changeConnection(method) {
+  if (changingConnection) return;
+  const apiKey = keyInput.value;
+  keyInput.value = '';
+  changingConnection = true;
+  renderConnection();
+  connectionStatus.textContent = method === 'DELETE' ? 'Removendo conexão…' : 'Salvando chave…';
+  try {
+    connection = await api('/api/integrations/outscraper', {
+      method,
+      headers:{'Content-Type':'application/json','X-Cub4-Client':'lead-finder'},
+      ...(method === 'POST' ? {body:JSON.stringify({apiKey})} : {})
+    });
+    changingConnection = false;
+    renderConnection();
+  } catch (error) {
+    changingConnection = false;
+    renderConnection();
+    connectionStatus.textContent = error.message;
+  }
+}
+
+document.getElementById('outscraper-form').addEventListener('submit', event => {
+  event.preventDefault();
+  changeConnection('POST');
+});
+removeKey.onclick = () => changeConnection('DELETE');
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -46,7 +90,7 @@ function describeSession() {
     sessionLine.textContent = 'Nenhuma sessão ativa neste navegador.';
     logout.hidden = true;
     if (loginLink) loginLink.hidden = false;
-    lead.textContent = `Crie sua conta com o mesmo e-mail da compra. A cobrança acontece no ${label()}.`;
+    lead.textContent = `Crie sua conta com o mesmo e-mail da compra. O plano é cobrado no ${label()}; os dados usam sua conta separada do Outscraper.`;
     return;
   }
   const sub = user.subscription || {};
@@ -54,7 +98,7 @@ function describeSession() {
   if (loginLink) loginLink.hidden = true;
   sessionLine.textContent = `${user.email} · ${sub.planName || 'sem plano'} · ${sub.remaining || 0}/${sub.quota || 0} empresas restantes`;
   lead.textContent = billing.configured
-    ? `Checkout ${label()} disponível. A franquia só é liberada depois da confirmação do webhook.`
+    ? `Seu plano libera o uso do Lead Finder após a confirmação do pagamento. Conecte também sua chave do Outscraper para buscar.`
     : `Conta pronta. Configure os links e o webhook do ${label()} no servidor para abrir o checkout.`;
 }
 
@@ -95,6 +139,11 @@ Promise.all([
   user = session.user || null;
   billing = catalog.billing || billing;
   describeSession();
+  if (user) api('/api/integrations/outscraper').then(data => {
+    connection = data;
+    renderConnection();
+  }).catch(error => { connectionStatus.textContent = error.message; });
+  else renderConnection();
   const plans = catalog.plans || [];
   renderPlans(plans);
   if (params.get('checkout') === 'retorno') {
