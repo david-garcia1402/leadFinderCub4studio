@@ -9,15 +9,11 @@ export const PROVIDERS = Object.freeze({
 
 const PLAN_IDS = ['essencial', 'profissional', 'escala'];
 
-export const DEFAULT_KIWIFY_CHECKOUTS = Object.freeze({
-  essencial: 'https://pay.kiwify.com.br/UaYc7RN',
-  profissional: 'https://pay.kiwify.com.br/mE9NqXs',
-  escala: 'https://pay.kiwify.com.br/kgDUfXS'
-});
+export const DEFAULT_KIWIFY_CHECKOUTS = Object.freeze({});
 
 function envValue(env, ...keys) {
   for (const key of keys) {
-    const value = String(env[key] || '').trim();
+    const value = String(env[key] || env[key.replace(/ESSENCIAL$/, 'ESSENTIAL').replace(/PROFISSIONAL$/, 'PROFESSIONAL').replace(/ESCALA$/, 'SCALE')] || '').trim();
     if (value) return value;
   }
   return '';
@@ -41,7 +37,7 @@ export function resolveProvider(env = process.env) {
   if (hasKiwifyCheckout(env) || envValue(env, 'KIWIFY_WEBHOOK_TOKEN')) return PROVIDERS.kiwify;
   if (envValue(env, 'MP_ACCESS_TOKEN')) return PROVIDERS.mercadopago;
   if (hasHostedCheckout(env) || envValue(env, 'BILLING_WEBHOOK_SECRET')) return PROVIDERS.hosted;
-  return PROVIDERS.kiwify;
+  return PROVIDERS.hosted;
 }
 
 export function providerLabel(env = process.env, provider = resolveProvider(env)) {
@@ -85,9 +81,9 @@ export function planFromProduct({productId, productName, planId, env = process.e
   const id = String(productId || '').trim().toLowerCase();
   if (id && map[id]) return map[id];
   const name = String(productName || '').toLowerCase();
-  if (name.includes('escala')) return 'escala';
-  if (name.includes('profissional')) return 'profissional';
-  if (name.includes('essencial')) return 'essencial';
+  if (name.includes('escala')||name.includes('scale')) return 'escala';
+  if (name.includes('profissional')||name.includes('professional')) return 'profissional';
+  if (name.includes('essencial')||name.includes('essential')) return 'essencial';
   return null;
 }
 

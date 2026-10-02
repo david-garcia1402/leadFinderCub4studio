@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en-US"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My plan — Lead Finder</title><meta name="description" content="Manage your account, plan allowance and checkout."><link rel="icon" href="/logo.svg"><link rel="stylesheet" href="/landing.css"><meta name="robots" content="noindex, nofollow"></head>
+<body class="auth-page">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><a class="brand" href="/" aria-label="Lead Finder home"><img src="/logo.svg" width="40" height="40" alt=""><span>lead<span class="peach">finder</span><small>by cub4Studio</small></span></a><nav aria-label="Account navigation"><a href="/app">Workspace</a><a href="/login">Sign in</a></nav></header>
+<main id="main" class="wrap auth-shell">
+  <p class="eyebrow"><i></i> ACCOUNT & PLAN</p>
+  <h1>Your allowance is<br><em>linked to your account.</em></h1>
+  <p class="auth-lead" id="account-lead">Sign in to view your subscription. Checkout opens when payment setup is ready.</p>
+  <section class="auth-card" id="session-card">
+    <p class="mini-label">SESSION</p>
+    <p id="session-line">Checking your session…</p>
+    <div class="auth-actions">
+      <a class="button small outline" href="/login">Sign in or create account</a>
+      <button class="button small outline" id="logout" type="button" hidden>Sign out</button>
+      <a class="text-link" href="/app">Open workspace →</a>
+    </div>
+  </section>
+  <section class="auth-card"><h2>Start prospecting</h2><p>Choose your plan, wait for payment confirmation and search directly in Lead Finder. No external accounts or API keys are needed. CRM, pipeline and follow-ups are all in your account.</p><a class="button" href="/app">Open my CRM →</a></section>
+  <section class="plans account-plans" id="plans"></section>
+  <p id="checkout-status" role="status"></p>
+</main>
+<script src="/account.js" type="module"></script>
+</body></html>

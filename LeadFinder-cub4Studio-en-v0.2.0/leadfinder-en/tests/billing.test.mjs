@@ -14,9 +14,9 @@ import {parseWebhookPayload,verifyWebhookSignature,webhookManifest} from '../lib
 test('catalog keeps the proposed BRL plans and quotas', () => {
   assert.equal(getPlan('Profissional').quota, 300);
   assert.deepEqual(listPlans().map(plan => [plan.id, plan.amount, plan.quota]), [
-    ['essencial', 39.99, 100],
-    ['profissional', 59.99, 300],
-    ['escala', 89.99, 600]
+    ['essencial', 9.99, 100],
+    ['profissional', 19.99, 300],
+    ['escala', 29.99, 600]
   ]);
 });
 
@@ -41,11 +41,11 @@ test('subscription reserve is per user and blocks inactive accounts', async () =
     const billing = createBilling(store, {});
     const user = await auth.register({email:'c@example.com', password:'senha-forte'});
     assert.equal(billing.statusFor(user.id).status, 'none');
-    await assert.rejects(() => billing.reserve(user.id, 10), /Assinatura inativa/);
+    await assert.rejects(() => billing.reserve(user.id, 10), /Inactive subscription/);
     await billing.activateForTests(user.id, 'essencial');
     const first = await billing.reserve(user.id, 40);
     assert.equal(first.remaining, 60);
-    await assert.rejects(() => billing.reserve(user.id, 80), /Franquia mensal/);
+    await assert.rejects(() => billing.reserve(user.id, 80), /Plan allowance/);
     const other = await auth.register({email:'d@example.com', password:'senha-forte'});
     await billing.activateForTests(other.id, 'profissional');
     const otherQuota = await billing.reserve(other.id, 25);
@@ -56,7 +56,7 @@ test('subscription reserve is per user and blocks inactive accounts', async () =
   }
 });
 
-test('Kiwify checkout stays unavailable until a checkout and paid webhook are configured', async () => {
+test('checkout remains disabled until its link and payment webhook are configured', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'lf-chk-'));
   try {
     const store = await createStore(join(dir, 'accounts.json'));
@@ -64,21 +64,21 @@ test('Kiwify checkout stays unavailable until a checkout and paid webhook are co
     const billing = createBilling(store, {});
     const user = await auth.register({email:'e@example.com', password:'senha-forte'});
     assert.equal(billing.configured(), false);
-    assert.equal(billing.publicConfig().provider, 'kiwify');
+    assert.equal(billing.publicConfig().provider, 'hosted');
     assert.equal(checkoutUrlFor('essencial', {}), '');
     assert.equal(checkoutUrlFor('profissional', {}), '');
     assert.equal(checkoutUrlFor('escala', {}), '');
-    await assert.rejects(()=>billing.startCheckout(user,'profissional'),/Webhook Kiwify/);
-    const configured=createBilling(store,{BILLING_PROVIDER:'kiwify',KIWIFY_WEBHOOK_TOKEN:'token',KIWIFY_CHECKOUT_ESSENCIAL:DEFAULT_KIWIFY_CHECKOUTS.essencial,KIWIFY_CHECKOUT_PROFISSIONAL:DEFAULT_KIWIFY_CHECKOUTS.profissional,KIWIFY_CHECKOUT_ESCALA:DEFAULT_KIWIFY_CHECKOUTS.escala});
-    const started = await configured.startCheckout(user, 'profissional');
-    assert.equal(started.initPoint.startsWith('https://pay.kiwify.com.br/mE9NqXs'), true);
+    await assert.rejects(()=>billing.startCheckout(user,'professional'),/not configured/i);
+    const configured=createBilling(store,{BILLING_PROVIDER:'hosted',BILLING_WEBHOOK_SECRET:'test-secret',CHECKOUT_URL_PROFESSIONAL:'https://pay.example/professional'});
+    const started = await configured.startCheckout(user, 'professional');
+    assert.equal(started.initPoint.startsWith('https://pay.example/professional'), true);
     assert.match(started.initPoint, /email=e%40example.com/);
     assert.equal(planFromProduct({productName:'Plano - Essencial - 100 leads'}), 'essencial');
     assert.equal(planFromProduct({productName:'Plano - Profissional'}), 'profissional');
     assert.equal(planFromProduct({productName:'Plano - Escala'}), 'escala');
-    const override = createBilling(store, {BILLING_PROVIDER:'kiwify', KIWIFY_WEBHOOK_TOKEN:'token', KIWIFY_CHECKOUT_ESSENCIAL:'https://pay.kiwify.com.br/custom'});
-    const custom = await override.startCheckout(user, 'essencial');
-    assert.match(custom.initPoint, /pay\.kiwify\.com\.br\/custom/);
+    const override = createBilling(store, {BILLING_PROVIDER:'hosted', BILLING_WEBHOOK_SECRET:'test-secret', CHECKOUT_URL_ESSENTIAL:'https://pay.example/custom'});
+    const custom = await override.startCheckout(user, 'essential');
+    assert.match(custom.initPoint, /pay\.example\/custom/);
   } finally {
     await rm(dir, {recursive:true, force:true});
   }

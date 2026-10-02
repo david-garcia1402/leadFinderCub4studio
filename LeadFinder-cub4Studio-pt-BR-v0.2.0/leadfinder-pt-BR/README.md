@@ -1,109 +1,35 @@
-# Lead Finder by cub4Studio — Português — v0.2.0
+# Lead Finder CRM — Português (Brasil)
 
-## Início rápido
-Requer Node.js 22.9+ (testado com Node 24.19). Não há dependências externas de produção.
-Abra um terminal nesta pasta e execute:
+## Iniciar
 
-```bash
-npm run dev
-```
+Requer Node.js 22.9 ou posterior; não usa pacotes externos em produção. Copie `.env.example` para `.env` e execute `npm run dev`. A página comercial abre em `http://127.0.0.1:4173`, o login em `/entrar` e o CRM em `/app`.
 
-Página comercial: http://127.0.0.1:4173
-Painel: http://127.0.0.1:4173/app
+Para colocar no ar, use processo Node contínuo atrás de HTTPS e disco persistente para `.data`. O aplicativo guarda dados em JSON local e buscas pendentes em memória; use uma instância por pasta de dados. Não publique como site estático/serverless nem compartilhe a mesma pasta de dados entre as versões em inglês e português.
 
-```bash
-npm test
-npm run build
-```
+## Como funciona para o cliente
 
-O build já está incluído em `dist/`. Para rodar só a distribuição:
+O cliente cria a conta, paga o plano e busca dentro do Lead Finder. Não precisa criar conta no Outscraper, configurar API key ou comprar créditos. Os planos incluem 100, 300 ou 600 empresas solicitadas por ciclo de cobrança. Cada busca aceita até 25. O limite pedido fica reservado antes da consulta para evitar repetição de custos quando a fonte demora ou falha; resultados repetidos em cache não geram nova consulta. Sua franquia de software é separada do custo da fonte de dados, pago pelo operador.
 
-```bash
-cd dist
-node --env-file-if-exists=.env server.mjs
-```
+O CRM inclui etapas do funil editáveis, contatos, valor, etiquetas, notas, campos personalizados, probabilidade por etapa, histórico, tarefas de acompanhamento, atrasos, filtros, arquivamento com restauração e importação/exportação CSV protegida. Cada conta tem dados próprios, salvos em `.data/accounts.json`. O sistema guarda registros e rascunhos, mas não envia mensagens ou notificações externas. O atalho do Google Maps abre uma pesquisa manual; a URL do Maps não fornece importação automática. As empresas são importadas pela busca integrada no servidor.
 
-Não é um site puramente estático: o painel depende do servidor Node. Não abrir index.html diretamente. Não importar como tema Shopify. Não enviar a pasta dist diretamente a um Cloudflare Worker.
+## Configurar os planos pagos
 
-## O que mudou
-- Página comercial em português, separada do painel, com copy de benefícios, recursos, FAQ e contato.
-- Nova assinatura vetorial Lead Finder; mantém roxo/coral. É uma proposta visual do produto, não uma reprodução certificada da logo corporativa.
-- Prévia do produto em HTML/CSS, nítida em qualquer tela e sem imagens de banco genéricas. Empresas da prévia são fictícias e identificadas.
-- Três planos em colunas no desktop e empilhados no celular. Profissional em destaque.
-- Preços: R$ 39,99 / 59,99 / 89,99; franquias do software: 100 / 300 / 600 empresas. O plano não inclui créditos do Outscraper.
-- O botão de cada plano abre `/entrar?plano=` e, depois do login, o checkout Kiwify correspondente.
-- Exemplos desativados por padrão. Nunca substitui silenciosamente a busca real por dados fictícios.
-- Preservados filtros, favoritos no navegador, CSV e rascunho de abordagem.
-- Configuração explícita de origem HTTPS, menor exposição de informações do servidor e restrição adicional para busca real local.
+Defina `BILLING_PROVIDER=kiwify` ou `hosted`. Para Kiwify, configure os três links HTTPS, IDs reais de produto e `KIWIFY_WEBHOOK_TOKEN`. Para checkout hospedado genérico, preencha `CHECKOUT_URL_ESSENCIAL`, `CHECKOUT_URL_PROFISSIONAL`, `CHECKOUT_URL_ESCALA`, `BILLING_PRODUCT_*` e um `BILLING_WEBHOOK_SECRET` aleatório. Configure eventos de pagamento aprovado, renovação, estorno e cancelamento em `{APP_ORIGIN}/api/billing/webhook/kiwify` ou `/hosted`. Prefira assinatura HMAC SHA-256 no cabeçalho `x-billing-signature`. Mapeie IDs de produto a cada plano e use o mesmo e-mail da compra na conta Lead Finder. Os planos só aparecem como disponíveis depois de configurar link e autenticação do webhook; pagamentos não confirmados não liberam acesso.
 
-## Conectar a busca real com a chave de cada cliente
-Esta versão pt-BR usa exclusivamente a API key do Outscraper do cliente autenticado. Não usa uma chave Google Places nem OUTSCRAPER_API_KEY do operador. A versão EN continua separada, sem esta mudança.
+O Mercado Pago é opcional. Configure a API, o segredo de webhook e uma origem HTTPS pública. Antes de habilitar cartão recorrente, confirme suporte a BRL e assinaturas no seu cadastro. Os planos seguem R$ 39,99, R$ 59,99 e R$ 89,99 por mês, com franquias 100/300/600.
 
-Operador: copie .env.example para .env; gere uma chave de criptografia aleatória de 32 bytes em base64 com:
+## Ativar as buscas internas
 
-```bash
-node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
-```
+Depois de confirmar vendas, cadastre uma API key do Outscraper que pertença à sua empresa no servidor e defina `ENABLE_LIVE_SEARCH=true`. Cadastre uma forma de pagamento aceita pelo Outscraper. A tabela atual lista 500 primeiros registros do Google Maps gratuitos e cobrança pós-paga acima da faixa gratuita; consulte preços, saldo, uso anterior e condições vigentes na sua conta antes de liberar a busca. O aplicativo nunca envia a chave ao navegador.
 
-Defina CREDENTIAL_ENCRYPTION_KEY com esse valor e ENABLE_LIVE_SEARCH=true. A chave de criptografia não é uma API key do Outscraper. Ela deve ficar em um segredo do servidor, fora do Git, frontend e ZIPs. Mantenha o mesmo valor após reinícios e proteja seu backup; trocar esse segredo exige que os clientes cadastrem as API keys novamente. Sem um segredo válido, salvar chaves e buscas reais ficam desativados.
+O teto inicial é 500 registros pedidos em uma janela de 30 dias; ajuste `OUTSCRAPER_RECORD_CAP` para baixo se quiser restringir o gasto. O teto soma franquias reservadas, mesmo sem resultados, para não ocultar consultas que o provedor pode cobrar. Ele é compartilhado por todas as contas Lead Finder e gravado junto aos dados no servidor. Para iniciar uma nova janela, verifique a fatura/uso da conta Outscraper, informe conscientemente um novo `OUTSCRAPER_BUDGET_START` e reinicie o serviço. O contador não vê o uso de outros aplicativos na mesma conta do Outscraper. Não aumente o teto sem considerar esse saldo. Renovação do Lead Finder não redefine o teto do operador.
 
-Cliente: crie uma conta no Outscraper, copie a API key do painel e salve em /conta. É possível conectar antes da compra. A busca real exige tanto assinatura paga ativa do Lead Finder quanto chave própria. A gratuidade, o saldo e as cobranças de dados pertencem à conta do cliente no Outscraper. Pagar na Kiwify não cria conta, assinatura ou créditos no Outscraper. Consulte preços e limites em https://outscraper.com/pricing/.
+## Idioma, planos e dados
 
-A API key é armazenada usando AES-256-GCM, com nonce aleatório e vínculo criptográfico ao cliente. Nunca é devolvida ao navegador. Salvar não executa consulta: a primeira busca verifica a validade e o saldo diretamente no provedor, podendo consumir créditos. O cliente pode substituir ou remover a conexão. A operação invalida jobs/cache locais anteriores; não cancela uma coleta que já tenha sido iniciada no Outscraper. Revogue a chave no próprio Outscraper se quiser impedir qualquer uso externo.
+Defina `PUBLIC_SITE_URL` com HTTPS sem caminho e as URLs `EN_SITE_URL` e `PT_BR_SITE_URL` iguais nas duas instalações. O arquivo de exemplo já traz links de checkout da Kiwify da proposta anterior; eles ficam desativados até o token do webhook estar configurado. Nunca coloque credenciais no Git ou ZIP.
 
-Rotas autenticadas: GET/POST/DELETE /api/integrations/outscraper. POST aceita {"apiKey":"..."}; não aceita seleção de outro cliente. Respostas expõem só provider, configured, connected e updatedAt.
+O armazenamento JSON é para uma pequena instalação de processo único. Use disco persistente e cópia protegida de `.data/accounts.json`. Antes de escalar, planeje verificação de e-mail, recuperação de senha, cópias/restauração no banco, retenção e exclusão de conta. Os dados são pessoais/comerciais, então não publique backups nem logs com credenciais.
 
-Resultados e jobs continuam em memória, isolados por cliente e versão da conexão. Use uma instância e não reinicie durante consultas pendentes. Pedidos idênticos reaproveitam o job em andamento ou o cache sem nova reserva. Bloqueios locais por falta de chave ou limite de frequência não descontam franquia. Depois de enviar a consulta ao provedor, reservas não são estornadas automaticamente, pois falhas e timeouts podem ocultar uma coleta faturada. Confirme no painel do Outscraper antes de repetir. A franquia existente ainda usa mês do calendário; expiração da assinatura é verificada antes de buscar ou acompanhar jobs.
+## Distribuição
 
-Use HTTPS público e APP_ORIGIN correspondente em produção. Não inclua .env, .data ou credenciais em ZIP, Git ou frontend. Nenhum crédito ou serviço foi contratado nesta alteração. Os testes de busca usam um provedor simulado.
-
-## Exemplos para desenvolvimento
-Opcionalmente defina `ENABLE_SAMPLE_DATA=true` e escolha a fonte de exemplos no painel. Dados ficam explicitamente identificados como fictícios. Não use exemplos como resultados reais em anúncios. Dados salvos nesta versão ficam apenas no navegador.
-
-## Estado real do produto
-Esta versão pt-BR agora tem contas com e-mail/senha, sessão HttpOnly e franquia por cliente. O checkout padrão é a **Kiwify**, com adaptadores para Mercado Pago e para qualquer checkout hospedado (Hotmart, Eduzz, Stripe Payment Link, etc.). Sem variáveis, os três checkouts públicos (Essencial, Profissional e Escala) são usados. A franquia só libera com `KIWIFY_WEBHOOK_TOKEN`. Use o mesmo e-mail da compra e da conta. Não anunciar retorno financeiro.
-
-Ainda faltam antes de vender em escala: recuperação de acesso por e-mail; banco dedicado; exclusão/retenção de dados; documentos reais de privacidade/termos; observabilidade e um pagamento de teste ponta a ponta. Não há pixels de publicidade nesta versão.
-
-## Contas e checkout
-Copie `.env.example` para `.env`. Contas ficam em `.data/accounts.json`. Rotas: `/entrar`, `/conta`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/me`, `GET /api/plans`, `POST /api/billing/checkout`, `POST /api/billing/webhook` (também `/kiwify`, `/mercadopago` e `/hosted`).
-
-Defina `BILLING_PROVIDER=kiwify` (padrão), `mercadopago` ou `hosted`.
-
-Kiwify: crie 3 produtos/ofertas (Essencial, Profissional, Escala). Cole os links em `KIWIFY_CHECKOUT_*`, os `product_id` em `KIWIFY_PRODUCT_*` e o token de Apps → Webhooks em `KIWIFY_WEBHOOK_TOKEN`. Eventos: `compra_aprovada`, `subscription_renewed`, `compra_reembolsada`, `chargeback`, `subscription_canceled`, `subscription_late`. URL: `{APP_ORIGIN}/api/billing/webhook/kiwify`.
-
-Checkout genérico: `BILLING_PROVIDER=hosted`, `CHECKOUT_URL_*`, `BILLING_WEBHOOK_SECRET` e, se quiser, `BILLING_PRODUCT_*`. O webhook aceita `{ "token", "event":"purchase.approved", "email", "planId", "orderId" }` ou HMAC `x-billing-signature`.
-
-Mercado Pago: `BILLING_PROVIDER=mercadopago`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` e `APP_ORIGIN` HTTPS.
-
-A franquia libera no webhook ou, se a pessoa pagar antes de criar a conta, no próximo login com o mesmo e-mail. Sem as variáveis, criar conta funciona e o checkout responde 503.
-
-A busca real exige sessão, assinatura autorizada não expirada e uma API key própria do cliente. Os exemplos (`ENABLE_SAMPLE_DATA=true`) continuam disponíveis sem conta, só para prévia local.
-
-## Análise para campanha
-A dor mais concreta é o tempo gasto procurando empresas e organizando prospecção. Público inicial sugerido: freelancers de sites e pequenas agências. Oferta: encontrar empresas por região e priorizar as que não têm site listado. Não alegar “clientes prontos para comprar” nem “empresas sem site confirmado”.
-Antes de tráfego de assinatura: medir custo por resultado e margem, validar franquias, fazer busca real e pagamento/cancelamento de ponta a ponta. A página atual serve para apresentação e conversas de pré-lançamento; o contato aponta a cub4studio.com/#contato. Confirme esse destino antes de publicar.
-Preços e franquias são hipóteses comerciais, não recomendações baseadas em tarifas atuais. Descontos por volume podem destruir a margem se o custo de dados for alto.
-
-## Editar
-`public/index.html`: página comercial, preços e contatos.
-`public/landing.css`: identidade e layout.
-`public/landing.js`: seleção de interesse.
-`public/workspace.html`, `public/app.js`, `public/style.css`: painel.
-`public/auth.html`, `public/account.html` e respectivos JS: conta e plano.
-`public/logo.svg`: símbolo vetorial.
-`server.mjs` e `lib/`: backend, autenticação e provedores de checkout (Kiwify, Mercado Pago, genérico).
-Depois de qualquer edição, execute npm test e npm run build para atualizar dist.
-
-## Validação
-Build Node e testes automatizados executados nesta entrega. Verificação HTTP de páginas, assets, bloqueio de exemplos, origem e proteção de arquivos internos. Validação visual em navegador depende da disponibilidade do Chromium no ambiente; veja VALIDATION.md. Nenhum pagamento, chamada paga ao provedor ou deploy público foi realizado.
-
-## SEO deployment configuration / Configuração de SEO
-
-Set `PUBLIC_SITE_URL` to this deployment's real HTTPS origin, without a path. Set `EN_SITE_URL` and `PT_BR_SITE_URL` to the two distinct production origins in **both** deployments to emit reciprocal hreflang links. These fields are not inferred from request headers or the corporate website. Blank/invalid `PUBLIC_SITE_URL` disables indexing (robots + X-Robots-Tag), omits canonical and makes `/sitemap.xml` return 503. This keeps staging/local deployments out of search.
-
-Defina `PUBLIC_SITE_URL` com a origem HTTPS real desta versão, sem caminho. Configure `EN_SITE_URL` e `PT_BR_SITE_URL` nas duas versões. Valores vazios mantêm a indexação desativada. Reinicie o servidor após configurar. As versões são aplicações separadas e devem ser publicadas em origens distintas; hospedagem em subdiretórios não é suportada.
-
-The server emits canonical/og:url, a landing-only sitemap and robots rules. The workspace has noindex. Localized title, description, Open Graph, Twitter summary and SoftwareApplication JSON-LD describe existing features. No paid Offer schema is published before billing exists. No ranking or rich-result guarantee.
-
-Plan CTAs now send visitors to `/entrar` with the selected plan. The local prospecting brief remains available. Checkout uses Kiwify by default and can switch to Mercado Pago or another hosted checkout. It stays inactive without credentials. No analytics conversion is recorded.
+`npm run build` cria a versão portátil em `dist`. Configure o `.env` de produção fora do pacote e execute `npm run start`. O pacote inclui código, telas e `.env.example`, mas não inclui chave do provedor nem dados de clientes.

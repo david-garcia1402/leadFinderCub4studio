@@ -10,7 +10,8 @@ import {createStore} from './lib/store.mjs';
 import {createAuth,parseCookies,publicUser,sessionCookie} from './lib/auth.mjs';
 import {listPlans} from './lib/plans.mjs';
 import {createBilling} from './lib/billing.mjs';
-import {createCredentials} from './lib/credentials.mjs';
+import {createSearchBudget} from './lib/search-budget.mjs';
+import {createCRM} from './lib/crm.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const arg = name => {
@@ -24,8 +25,9 @@ const dataDir = process.env.DATA_DIR || root + '.data';
 const store = await createStore(dataDir.replace(/\/?$/, '/') + 'accounts.json');
 const auth = createAuth(store);
 const billing = createBilling(store, process.env);
-const credentials = createCredentials(store, process.env);
-const live = process.env.ENABLE_LIVE_SEARCH === 'true' && credentials.configured;
+const searchBudget = createSearchBudget(store, process.env);
+const crm = createCRM(store, 'pt-BR');
+const live = process.env.ENABLE_LIVE_SEARCH === 'true' && searchBudget.configured;
 const jobs = new Map();
 const cache = new Map();
 const busy = new Set();
@@ -108,7 +110,7 @@ function activeSubscription(userId) {
   const sub = billing.statusFor(userId);
   const expiresAt = new Date(sub.periodEnd || '').getTime();
   if (!['authorized','active'].includes(sub.status) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
-    throw Object.assign(new Error('Assinatura inativa. Confirme o pagamento do Lead Finder para buscar.'), {status:402});
+    throw Object.assign(new Error('Assinatura inativa. Confirme o pagamento do Lead Finder para continuar.'), {status:402});
   }
   return sub;
 }
@@ -116,7 +118,7 @@ function activeSubscription(userId) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
-    if (['POST','DELETE'].includes(req.method) && !isWebhook(url)) {
+    if (['POST','PATCH','DELETE'].includes(req.method) && !isWebhook(url)) {
       if (req.headers.origin && req.headers.origin !== (process.env.APP_ORIGIN || `http://${req.headers.host}`)) {
         return send(res, 403, {error: 'Cross-origin requests are not allowed.'});
       }
@@ -167,23 +169,22 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, {user: await sessionUser(req, user)});
     }
 
-    if (url.pathname === '/api/integrations/outscraper') {
+    if (url.pathname === '/api/crm' || url.pathname.startsWith('/api/crm/')) {
       const user = requestUser(req);
-      if (!user) return send(res, 401, {error:'Entre na sua conta para conectar o Outscraper.'});
-      if (req.method === 'GET') return send(res, 200, credentials.status(user.id));
-      if (!['POST','DELETE'].includes(req.method)) return send(res, 405, {error:'Método não permitido.'});
-      if (busy.has(user.id)) return send(res, 409, {error:'Aguarde a solicitação de busca terminar antes de alterar a conexão.'});
-      if (limited(user.id, 'connection', 10, 60 * 1000)) return send(res, 429, {error:'Aguarde antes de alterar a conexão novamente.'});
-      busy.add(user.id);
-      try {
-        const result = req.method === 'DELETE'
-          ? await credentials.remove(user.id)
-          : await credentials.save(user.id, (await body(req)).apiKey);
-        clearSearches(user.id);
-        return send(res, 200, result);
-      } finally {
-        busy.delete(user.id);
-      }
+      if (!user) return send(res, 401, {error:'Entre na sua conta para acessar o CRM.'});
+      if (url.pathname === '/api/crm' && req.method === 'GET') return send(res, 200, crm.snapshot(user.id));
+      activeSubscription(user.id);
+      if (limited(user.id, 'crm-write', 120, 60 * 1000)) return send(res, 429, {error:'Aguarde antes de salvar novamente.'});
+      const parts = url.pathname.split('/').filter(Boolean);
+      const collection = parts[2], id = parts[3];
+      if (collection === 'leads' && req.method === 'POST' && !id) return send(res, 201, await crm.saveLead(user.id, await body(req,32768)));
+      if (collection === 'leads' && req.method === 'PATCH' && id && parts.length===4) return send(res, 200, await crm.saveLead(user.id, await body(req,32768), id));
+      if (collection === 'leads' && req.method === 'POST' && id && parts[4]==='archive' && parts.length===5) return send(res, 200, await crm.archiveLead(user.id,id,(await body(req)).archived));
+      if (collection === 'leads' && req.method === 'POST' && id && parts[4]==='activities' && parts.length===5) return send(res, 201, await crm.activity(user.id,id,await body(req,16384)));
+      if (collection === 'tasks' && req.method === 'POST' && !id) return send(res, 201, await crm.saveTask(user.id,await body(req)));
+      if (collection === 'tasks' && req.method === 'PATCH' && id && parts.length===4) return send(res, 200, await crm.saveTask(user.id,await body(req),id));
+      if (collection === 'settings' && req.method === 'POST' && parts.length===3) return send(res, 200, await crm.settings(user.id,await body(req,16384)));
+      return send(res, 404, {error:'Not found'});
     }
 
     if (url.pathname === '/api/billing/checkout' && req.method === 'POST') {
@@ -222,7 +223,7 @@ const server = http.createServer(async (req, res) => {
       const user = requestUser(req);
       if (!user) return send(res, 401, {error: 'Entre na sua conta para usar a busca real.'});
       const subscription = activeSubscription(user.id);
-      const connection = credentials.read(user.id);
+      const connection = searchBudget.key();
       const cacheKey = user.id + ':' + connection.version + ':' + JSON.stringify(search).toLowerCase();
       if (cache.has(cacheKey)) return send(res, 200, {...cache.get(cacheKey), cached: true, quota:subscription});
       const existing = [...jobs.entries()].find(([,job]) => job.key === cacheKey);
@@ -230,7 +231,7 @@ const server = http.createServer(async (req, res) => {
       if (busy.has(user.id) || Date.now() - (lastLive.get(user.id) || 0) < 10000) return send(res, 429, {error: 'Aguarde antes de iniciar outra busca.'});
       busy.add(user.id);
       try {
-        const quota = await billing.reserve(user.id, search.limit);
+        const quota = await searchBudget.reserve(user.id, search.limit, billing);
         lastLive.set(user.id, Date.now());
         const result = await beginSearch(search, connection.apiKey);
         if (result.pending) {
@@ -252,7 +253,7 @@ const server = http.createServer(async (req, res) => {
       const jobId = url.pathname.split('/').pop();
       const job = jobs.get(jobId);
       if (!job || job.userId !== user.id) return send(res, 404, {error: 'Sessão de busca expirada. Confira o painel do provedor antes de repetir.'});
-      const connection = credentials.read(user.id);
+      const connection = searchBudget.key();
       if (connection.version !== job.version) return send(res, 409, {error:'A conexão mudou. Confira a busca no painel do Outscraper.'});
       if (Date.now() - job.last < 5000) return send(res, 202, {pending: true});
       job.last = Date.now();
@@ -275,9 +276,9 @@ const server = http.createServer(async (req, res) => {
       '/account.js': 'public/account.js',
       '/logo.svg': 'public/logo.svg',
       '/': 'public/index.html',
-      '/app.js': 'public/app.js',
-      '/style.css': 'public/style.css',
-      '/leads.mjs': 'lib/leads.mjs',
+      '/crm.js': 'public/crm.js',
+      '/crm.css': 'public/crm.css',
+      '/locale.js': 'public/locale.js',
       '/fonts/plus-jakarta-sans-latin-wght-normal.woff2': 'public/fonts/plus-jakarta-sans-latin-wght-normal.woff2',
       '/fonts/plus-jakarta-sans-latin-wght-italic.woff2': 'public/fonts/plus-jakarta-sans-latin-wght-italic.woff2'
     };

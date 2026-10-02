@@ -25,7 +25,7 @@ export function createBilling(store, env = process.env) {
 
     configured() {
       const provider = resolveProvider(env);
-      if (provider.id === 'mercadopago') return mpConfigured(env);
+      if (provider.id === 'mercadopago') return this.webhookReady() && mpConfigured(env);
       return this.webhookReady() && Boolean(checkoutUrlFor('essencial', env, provider.id) || checkoutUrlFor('profissional', env, provider.id) || checkoutUrlFor('escala', env, provider.id));
     },
 
@@ -40,8 +40,8 @@ export function createBilling(store, env = process.env) {
         provider: provider.id,
         label: providerLabel(env, provider),
         configured: this.configured(),
-        currency: 'BRL',
-        checkoutPlans: ['essencial','profissional','escala'].filter(id => provider.checkoutKind === 'api' ? mpConfigured(env) : this.webhookReady() && Boolean(checkoutUrlFor(id, env, provider.id))),
+        currency: 'USD',
+        checkoutPlans: ['essencial','profissional','escala'].filter(id => provider.checkoutKind === 'api' ? this.webhookReady() && mpConfigured(env) : this.webhookReady() && Boolean(checkoutUrlFor(id, env, provider.id))),
         checkoutKind: provider.checkoutKind
       };
     },
@@ -56,8 +56,8 @@ export function createBilling(store, env = process.env) {
       await store.update(data => {
         const sub = subscriptionFor(data, userId);
         const view = publicSubscription(sub, now);
-        if (!isActiveStatus(view.status)) throw Object.assign(new Error(`Assinatura inativa. Conclua o checkout ${label} para liberar buscas reais.`), {status:402});
-        if (view.remaining < limit) throw Object.assign(new Error('Franquia mensal do plano atingida. Aguarde a renovação ou escolha um plano maior.'), {status:402});
+        if (!isActiveStatus(view.status)) throw Object.assign(new Error(`Inactive subscription. Complete the ${label} checkout to enable live searches.`), {status:402});
+        if (view.remaining < limit) throw Object.assign(new Error('Plan allowance reached. Wait for renewal or choose a larger plan.'), {status:402});
         sub.reserved += limit;
         reserved = {reserved: sub.reserved, remaining: Math.max(0, view.quota - sub.reserved), quota: view.quota, planId: sub.planId};
       });
@@ -66,9 +66,9 @@ export function createBilling(store, env = process.env) {
 
     async startCheckout(user, planId) {
       const plan = getPlan(planId);
-      if (!plan) throw Object.assign(new Error('Selecione um plano válido.'), {status:400});
+      if (!plan) throw Object.assign(new Error('Select a valid plan.'), {status:400});
       const provider = resolveProvider(env);
-      if(!this.webhookReady()) throw Object.assign(new Error('Os planos estão sendo preparados. Entre em contato com o suporte.'),{status:503});
+      if(!this.webhookReady()) throw Object.assign(new Error('Plans are being prepared. Please contact support.'),{status:503});
       const checkout = {
         id: newId('chk_'),
         userId: user.id,
@@ -80,13 +80,13 @@ export function createBilling(store, env = process.env) {
       };
       if (provider.checkoutKind === 'hosted') {
         const url = withBuyerEmail(checkoutUrlFor(plan.id, env, provider.id), user.email);
-        if (!url) throw Object.assign(new Error(`Checkout ${providerLabel(env, provider)} ainda não configurado. Defina o link do plano ${plan.name}.`), {status:503});
+        if (!url) throw Object.assign(new Error(`${providerLabel(env, provider)} checkout is not configured for ${plan.name}.`), {status:503});
         await store.update(data => { data.checkouts.push({...checkout, initPoint: url}); });
         return {checkoutId: checkout.id, planId: plan.id, initPoint: url, provider: provider.id, sandbox: false};
       }
-      if (!mpConfigured(env)) throw Object.assign(new Error('Checkout Mercado Pago ainda não configurado. Defina MP_ACCESS_TOKEN no servidor.'), {status:503});
+      if (!mpConfigured(env)) throw Object.assign(new Error('Mercado Pago checkout is not configured.'), {status:503});
       const appOrigin = origin();
-      if (!/^https:\/\//.test(appOrigin)) throw Object.assign(new Error('Defina APP_ORIGIN com a origem HTTPS pública antes de iniciar o checkout.'), {status:503});
+      if (!/^https:\/\//.test(appOrigin)) throw Object.assign(new Error('Configure a public HTTPS APP_ORIGIN before starting checkout.'), {status:503});
       await store.update(data => { data.checkouts.push(checkout); });
       try {
         const resource = await createPreapproval({
@@ -105,7 +105,7 @@ export function createBilling(store, env = process.env) {
             row.initPoint = url;
           }
         });
-        if (!url) throw new Error('O Mercado Pago não devolveu a URL de checkout.');
+        if (!url) throw new Error('Mercado Pago did not return a checkout URL.');
         return {checkoutId: checkout.id, planId: plan.id, initPoint: url, provider: provider.id, sandbox: Boolean(resource.sandbox_init_point && !resource.init_point)};
       } catch (error) {
         await store.update(data => {
@@ -125,21 +125,21 @@ export function createBilling(store, env = process.env) {
 
     async handleKiwifyWebhook({query, body}) {
       const secret = kiwifyToken(env);
-      if (!secret) throw Object.assign(new Error('Webhook Kiwify sem KIWIFY_WEBHOOK_TOKEN.'), {status:503});
-      if (!verifyKiwifyToken({body, query, secret})) throw Object.assign(new Error('Token do webhook Kiwify inválido.'), {status:401});
+      if (!secret) throw Object.assign(new Error('Kiwify webhook is not configured.'), {status:503});
+      if (!verifyKiwifyToken({body, query, secret})) throw Object.assign(new Error('Invalid Kiwify webhook token.'), {status:401});
       return this.applyNormalized(parseKiwifyEvent(body, env));
     },
 
     async handleHostedWebhook({headers, query, body, raw}) {
       const secret = hostedSecret(env);
-      if (!secret) throw Object.assign(new Error('Webhook genérico sem BILLING_WEBHOOK_SECRET.'), {status:503});
-      if (!verifyHostedWebhook({headers, body, query, raw, secret})) throw Object.assign(new Error('Assinatura do webhook inválida.'), {status:401});
+      if (!secret) throw Object.assign(new Error('Generic webhook is not configured.'), {status:503});
+      if (!verifyHostedWebhook({headers, body, query, raw, secret})) throw Object.assign(new Error('Invalid webhook signature.'), {status:401});
       return this.applyNormalized(parseHostedEvent(body, env));
     },
 
     async handleMercadoPagoWebhook({headers, query, body}) {
       const secret = webhookSecret(env);
-      if (!secret) throw Object.assign(new Error('Webhook Mercado Pago sem MP_WEBHOOK_SECRET.'), {status:503});
+      if (!secret) throw Object.assign(new Error('Mercado Pago webhook is not configured.'), {status:503});
       const parsed = parseWebhookPayload(body, query);
       const valid = verifyWebhookSignature({
         signature: headers['x-signature'],
@@ -147,7 +147,7 @@ export function createBilling(store, env = process.env) {
         dataId: parsed.dataId || query['data.id'] || query.id,
         secret
       });
-      if (!valid) throw Object.assign(new Error('Assinatura do webhook inválida.'), {status:401});
+      if (!valid) throw Object.assign(new Error('Invalid webhook signature.'), {status:401});
       if (!parsed.dataId) return {ok:true, ignored:true};
       const eventKey = `${parsed.type}:${parsed.dataId}`;
       if (store.snapshot().events.some(item => item.id === eventKey)) return {ok:true, duplicate:true};
@@ -281,7 +281,7 @@ export function createBilling(store, env = process.env) {
 
     async activateForTests(userId, planId) {
       const plan = getPlan(planId);
-      if (!plan) throw new Error('Selecione um plano válido.');
+      if (!plan) throw new Error('Select a valid plan.');
       await store.update(data => {
         activateSubscription(data, userId, plan.id, {provider:'test', preapprovalId:'test'});
       });
