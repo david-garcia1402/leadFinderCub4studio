@@ -21,7 +21,7 @@ export function seoLinks(env = process.env) {
 }
 export function robots(env = process.env) {
   const origin = publicOrigin(env.PUBLIC_SITE_URL);
-  return origin ? `User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /api/\nSitemap: ${origin}/sitemap.xml\n` : 'User-agent: *\nDisallow: /\n';
+  return origin ? `User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /entrar\nDisallow: /conta\nDisallow: /api/\nSitemap: ${origin}/sitemap.xml\n` : 'User-agent: *\nDisallow: /\n';
 }
 export function sitemap(env = process.env) {
   const origin = publicOrigin(env.PUBLIC_SITE_URL);

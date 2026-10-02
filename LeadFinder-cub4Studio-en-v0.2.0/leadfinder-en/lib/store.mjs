@@ -23,7 +23,7 @@ export async function createStore(file) {
       providerUsage: Array.isArray(raw.providerUsage) ? raw.providerUsage : []
     };
   } catch (e) {
-    if (e.code !== 'ENOENT') throw new Error('Arquivo de contas ilegível; recusando iniciar sem isolamento de clientes.');
+    if (e.code !== 'ENOENT') throw new Error('Account data is unreadable; refusing to start without customer isolation.');
   }
   let queue = Promise.resolve();
   const persist = async next => {

@@ -1,78 +1,35 @@
-# Lead Finder by cub4Studio — English — v0.2.0
+# Lead Finder CRM — English
 
-## Quick start
-Requires Node.js 22.9+ (tested with Node 24.19). No external production dependencies.
-Open a terminal in this directory:
+## Run it
 
-```bash
-npm run dev
-```
+Requires Node.js 22.9 or later. Copy `.env.example` to `.env`, then run `npm run dev`. Open the sales page at `http://127.0.0.1:4173`, sign in at `/login`, and open the workspace at `/app`. There are no external packages to install.
 
-Product page: http://127.0.0.1:4173
-Workspace: http://127.0.0.1:4173/app
+To make the application available on the public internet, run it as a long-lived Node.js process behind HTTPS and attach persistent storage for `.data`. This app writes a local JSON database and keeps pending provider jobs in process memory; run one instance per data directory. Do not deploy it to static hosting/serverless or share its data directory between the English and Portuguese processes.
 
-```bash
-npm test
-npm run build
-```
+## Product workflow
 
-The build is already included in `dist/`. To run the distribution alone:
+Customers sign up, pay the selected monthly software plan, and search directly from Lead Finder. They do not create an Outscraper account, provide an API key or purchase provider credits. The software allowance is 100, 300 or 600 requested business records per paid billing cycle. Each search accepts up to 25. Reserving requested results up front prevents repeated billing when a provider response is delayed or fails. Cached repeats do not create another request. Provider credits are funded centrally by the operator and are separate from the paid customer allowance.
 
-```bash
-cd dist
-node --env-file-if-exists=.env server.mjs
-```
+The workspace includes a six-stage customizable sales pipeline, account-specific companies and contacts, deal amounts, tags, notes, custom fields, stage probabilities, activity history, follow-up tasks, overdue/today views, archive/restore and safe CSV import/export. Customer data is isolated by account and persists in `.data/accounts.json`. Activities are notes in the CRM; the app does not send messages or external reminders. Google Maps opens a manual search link only; Maps URLs cannot import result data. Live import uses the server integration.
 
-This is a Node application, not a static-only website. Do not open index.html directly, import it as a Shopify theme or upload dist directly to a Cloudflare Worker.
+## Turn on billing
 
-## Changes
-- English product page with benefit-led copy, features, FAQ and contact CTA, separate from the workspace.
-- New vector Lead Finder product mark using the existing purple/coral palette. This is a proposed product identity, not a certified reproduction of the corporate logo.
-- Responsive HTML/CSS product illustration with clearly labeled fictional businesses. No generic stock imagery.
-- Three desktop pricing columns, stacked on mobile, with the Professional plan highlighted.
-- Proposed monthly USD prices: $9.99 / $19.99 / $29.99. Proposed allowances: 100 / 300 / 600 businesses. These are not enforced subscription quotas and require commercial validation.
-- Interest CTAs select a plan and lead to the corporate contact page. No checkout or waitlist registration is implemented.
-- Sample data disabled by default. Real searches never silently fall back to fictional data.
-- Preserved filters, browser-saved shortlist, CSV export and editable outreach drafts.
-- Explicit HTTPS origin configuration, reduced config exposure and additional local-only live-search checks.
+Set `BILLING_PROVIDER=hosted`, a separate HTTPS `CHECKOUT_URL_ESSENTIAL`, `CHECKOUT_URL_PROFESSIONAL` and `CHECKOUT_URL_SCALE`, and a random `BILLING_WEBHOOK_SECRET`. Map each external product ID to `BILLING_PRODUCT_ESSENTIAL`, `BILLING_PRODUCT_PROFESSIONAL` and `BILLING_PRODUCT_SCALE`. Configure the payment service to POST confirmed purchase, renewal, refund and cancellation events to `{APP_ORIGIN}/api/billing/webhook/hosted`. Prefer an HMAC SHA-256 signature in `x-billing-signature` over a plain token. Events should include email, product ID or English `planId`, event name and a unique order/event ID. A plan opens only when both its checkout link and a webhook secret are configured; an unconfirmed checkout does not activate access. Return the customer to `/account` after checkout.
 
-## Enable real searches locally
-Copy `.env.example` to `.env`. Set `OUTSCRAPER_API_KEY`, `ENABLE_LIVE_SEARCH=true` and keep `HOST=127.0.0.1`. Use `APP_ORIGIN=http://127.0.0.1:4173` and open that exact address. Set a conservative `MAX_MONTHLY_RECORDS`. Restart the server. When running dist, place .env in dist.
-Never include .env in Git, ZIP deliveries or frontend code. The key remains server-side.
-The provider integration was preserved, not verified with real credentials. Check pricing, permissions and usage limits in your own provider account before consuming credits. No account, credits or paid services were purchased.
-The local budget is global, not per subscriber and not a provider-side monetary cap. Failed reservations are not refunded automatically. Use a single process; jobs/cache are in memory. Monthly reset occurs on startup. Do not restart while a search is pending.
+The built-in Kiwify and Mercado Pago options remain available if you explicitly configure them. Use a USD-capable provider and confirm recurring billing support for international cards before enabling subscriptions.
 
-## Development samples
-Optionally set `ENABLE_SAMPLE_DATA=true`, then choose sample data in the workspace. Fictional data remains explicitly labeled. Never present samples as real results in advertising. Saved lists remain in the current browser only.
+## Turn on integrated search
 
-## Actual readiness
-This delivery improves the product presentation and experience but does NOT implement a paid multi-user SaaS. Do not advertise immediate subscription access or financial returns. Live operation remains local. IP/header checks do not replace authentication and may depend on proxy behavior; do not expose this backend with an active API key publicly.
+After a customer has purchased a plan, configure one operator-owned `OUTSCRAPER_API_KEY` on the server and set `ENABLE_LIVE_SEARCH=true`. Add a provider payment method before paid usage is possible; Outscraper lists a free allowance for the first 500 Google Maps records and postpaid invoices when use exceeds that tier. Pricing and provider eligibility can change; confirm the provider account's current terms and past usage first. The key is never returned by the app.
 
-Before launching subscriptions: authentication/account recovery; database with tenant isolation; atomic credit accounting; checkout and idempotent billing webhooks; subscription-based search authorization; data retention/deletion; actual privacy/terms documents; abuse protection, logging and monitoring; real provider validation. Confirm provider usage rights and terms. No advertising pixels are installed.
+The app defaults to a conservative global ceiling of 500 requested records for a 30-day window; configure `OUTSCRAPER_RECORD_CAP` lower if you need a tighter spend limit. The ceiling counts reserved records, not successful results, and is shared by all customers using this server key. It is persisted across restarts. Before a fresh window, review the provider account balance/invoice and explicitly set a new `OUTSCRAPER_BUDGET_START`, then restart. The ceiling cannot see activity performed outside this app on the same provider account. Never set it above the spend you have reviewed and accepted. Billing-plan renewals do not reset the operator budget.
 
-## Campaign analysis
-The clearest pain point is time spent researching businesses and organizing outreach. Suggested initial audience: website freelancers and small agencies. Offer: find businesses by location and prioritize those without a listed website. Do not claim ready-to-buy customers or a confirmed absence of a website.
-Before subscription campaigns, measure data cost and margins, validate allowances and test real search, payment and cancellation end to end. This page currently supports product presentation and prelaunch conversations. Contact links point to cub4studio.com/#contato; verify that destination before publishing.
-Prices/allowances are commercial hypotheses, not recommendations based on current provider tariffs. Volume discounts can erode margin when data costs are high. US prices are in USD. Brazil uses the fixed reference conversion documented in the repository README.
+## Language, checkout and data
 
-## Editing
-`public/index.html`: product page, pricing and contact links.
-`public/landing.css`: brand and responsive layout.
-`public/landing.js`: plan interest selection.
-`public/workspace.html`, `public/app.js`, `public/style.css`: workspace.
-`public/logo.svg`: vector mark.
-`server.mjs` and `lib/`: backend/provider integration.
-After editing, run npm test and npm run build to refresh dist.
+Set `PUBLIC_SITE_URL` to the real HTTPS origin without a path; set `EN_SITE_URL` and `PT_BR_SITE_URL` on both apps to enable matching language links. The English plan prices are $9.99, $19.99 and $29.99 USD per month. Checkout pages are configured per plan and remain unavailable until you add provider links and webhook settings.
 
-## Validation
-Node build and automated tests run for this delivery. HTTP checks cover pages/assets, disabled samples, origins and internal-file boundaries. Browser visual validation depends on Chromium availability; see VALIDATION.md. No payments, paid provider calls or public deployment were performed.
+The JSON store is suitable for one small installation, not concurrent multi-instance hosting. Back up `.data/accounts.json` securely and use persistent disks. Plan for email verification, password recovery, database backups/restore, retention and account deletion before public scale. Keep `.env`, `.data` and runtime logs out of source control and customer ZIPs.
 
-## SEO deployment configuration / Configuração de SEO
+## Package and source
 
-Set `PUBLIC_SITE_URL` to this deployment's real HTTPS origin, without a path. Set `EN_SITE_URL` and `PT_BR_SITE_URL` to the two distinct production origins in **both** deployments to emit reciprocal hreflang links. These fields are not inferred from request headers or the corporate website. Blank/invalid `PUBLIC_SITE_URL` disables indexing (robots + X-Robots-Tag), omits canonical and makes `/sitemap.xml` return 503. This keeps staging/local deployments out of search.
-
-Defina `PUBLIC_SITE_URL` com a origem HTTPS real desta versão, sem caminho. Configure `EN_SITE_URL` e `PT_BR_SITE_URL` nas duas versões. Valores vazios mantêm a indexação desativada. Reinicie o servidor após configurar. As versões são aplicações separadas e devem ser publicadas em origens distintas; hospedagem em subdiretórios não é suportada.
-
-The server emits canonical/og:url, a landing-only sitemap and robots rules. The workspace has noindex. Localized title, description, Open Graph, Twitter summary and SoftwareApplication JSON-LD describe existing features. No paid Offer schema is published before billing exists. No ranking or rich-result guarantee.
-
-Plan CTAs populate a local prospecting brief with plan, monthly price, service and target market. Visitors copy it and paste it into their conversation on the existing corporate contact page. No lead is automatically sent, registered or stored; no checkout is implemented. No analytics conversion is recorded.
+`npm run build` creates a portable Node.js copy in `dist`; run it with `cd dist` and `npm run start` after providing its runtime `.env`. The package contains source, static assets and `.env.example`, not provider credentials or customer data.
